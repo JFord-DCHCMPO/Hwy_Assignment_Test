@@ -22,20 +22,18 @@ library(readxl)
 library(sp)
 library(ggplot2)
 
-pref_opt <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp")
-
-pref_opt <- pref_opt %>%
+pref_opt <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp") %>%
   select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY)
 
-trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp")
-
-trm_2016 <- trm_2016 %>%
+trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") %>%
   select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY)
+
+
 
 ```
 
 
-Highway Scenario Maps {data-icon="ion-android-globe"}
+Highway Output Maps {data-icon="ion-android-globe"}
 =====================================  
 
 Row
@@ -44,6 +42,7 @@ Row
 
 
 ### PrefOpt - Use Hwy Link filter
+This is text. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -298,11 +297,6 @@ a
 
 
 ```
-
-
-
-
-
 
 
 
