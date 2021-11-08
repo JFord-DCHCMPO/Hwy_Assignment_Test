@@ -264,7 +264,7 @@ a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
 
 
 
-Row {data-height=450}
+Row {data-height=850}
 -----------------------------------------------------------------------
 
 
@@ -326,6 +326,8 @@ a
 
 ```
 
+<!-- Row {data-height=850} -->
+<!-- ----------------------------------------------------------------------- -->
 
 ### TRM 2016 - TOD
 
@@ -524,7 +526,7 @@ a <- leaflet()%>%
                ) %>%
 
 
-  addLayersControl( baseGroups = c("All","Freeways","Major Arterial", "Minor Arterial", "Locals", "US70"), 
+  addLayersControl( baseGroups = c("Freeways","Major Arterial", "Minor Arterial", "Locals", "US70", "All"), 
                    options = layersControlOptions(collapsed = TRUE)) 
 
 
@@ -663,7 +665,7 @@ a <- leaflet()%>%
                ) %>%
 
 
-  addLayersControl( baseGroups = c("All","Freeways","Major Arterial", "Minor Arterial", "Locals", "US70"), 
+  addLayersControl( baseGroups = c("Freeways","Major Arterial", "Minor Arterial", "Locals", "US70", "All"), 
                    options = layersControlOptions(collapsed = TRUE)) 
 
 
