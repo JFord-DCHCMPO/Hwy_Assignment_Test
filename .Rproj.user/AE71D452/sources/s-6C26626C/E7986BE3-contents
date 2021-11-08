@@ -3,7 +3,7 @@ navbar:
   title: "TRM Hwy Metrics"
   left:
     - text: "Highway Metrics"
-      href: HwyMetrics.html
+      href: index.html
 
   
   
