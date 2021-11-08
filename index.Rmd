@@ -29,6 +29,9 @@ trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/
 
 
 
+vc <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/VC/PrefOpt2050_hwy_Triangle_1026.shp")
+
+
 ```
 
 
@@ -296,6 +299,186 @@ a
 
 
 ```
+
+
+
+
+
+
+
+
+
+
+Row
+-----------------------------------------------------------------------
+
+
+
+### PrefOpt V-C Ratio 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+bins <- c(0,0.5,1,1.5, 2, 2.5, 3, 3.5)  
+
+# pal <- colorBin(
+#   palette = "YlOrRd", na.color = "#808080",
+#   bins=bins,
+#   domain = vc$DLY_VC)
+
+
+US70_words <- c("70", 70, "US 70", "US70")
+
+vc$US70Tag <- case_when(
+    grepl(US70_words, vc$ROADNAME) ~ 1,
+        
+)
+
+
+
+
+interstates_express <- vc %>%
+  filter(vc$FCLASS==11 | vc$FCLASS==12|vc$FCLASS==21)
+
+
+maj_arterials <- vc %>%
+  filter(vc$FCLASS==13 | vc$FCLASS==22)
+
+min_arterials <- vc %>%
+  filter(vc$FCLASS==14 | vc$FCLASS==23)
+
+locals  <- vc %>%
+  filter(vc$FCLASS==15| vc$FCLASS==16 | vc$FCLASS==24 | vc$FCLASS==25|vc$FCLASS==26)
+
+us70  <- vc %>%
+  filter(vc$US70Tag==1)
+
+
+
+
+# pal <- colorNumeric(
+#   palette = "YlOrRd", na.color = "#808080",
+# #  bins=bins,
+#   domain = vc$DLY_VC)
+
+
+pal <- colorNumeric(c("green", "yellow", "red"), 0:2)
+
+
+a <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.83778764614695, 35.94942355920982, zoom=14) %>%
+  
+    ##US 70
+  addPolylines(data=us70, color=~pal(DLY_VC),  
+              popup = paste("Road Name: ", us70$ROADNAME , "<br>",
+                            "Total Daily Volume: ", us70$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", us70$DLY_VC
+                            ),
+              group="US70",
+           
+               ) %>%
+    addLegend("bottomright",
+            pal=pal,
+            value=us70$DLY_VC,
+          #  label="2020 HH",
+          #  group="US70",
+            title="Volume-to-Capacity Ratio") %>%
+  
+  
+  ##Freeways
+  addPolylines(data=interstates_express, color=~pal(DLY_VC),  
+              popup = paste("Road Name: ", interstates_express$ROADNAME , "<br>",
+                            "Total Daily Volume: ", interstates_express$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", interstates_express$DLY_VC
+                            ),
+              group="Freeways",
+           
+               ) %>%
+
+  
+    ##Major Arterials
+  addPolylines(data=maj_arterials, color=~pal(DLY_VC),  
+              popup = paste("Road Name: ", maj_arterials$ROADNAME , "<br>",
+                            "Total Daily Volume: ", maj_arterials$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", maj_arterials$DLY_VC
+                            ),
+              group="Major Arterial",
+           
+               ) %>%
+
+  
+      ##Minor Arterials
+  addPolylines(data=min_arterials, color=~pal(DLY_VC),  
+              popup = paste("Road Name: ", min_arterials$ROADNAME , "<br>",
+                            "Total Daily Volume: ", min_arterials$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", min_arterials$DLY_VC
+                            ),
+              group="Minor Arterial",
+           
+               ) %>%
+
+    
+      ##Locals 
+  addPolylines(data=locals, color=~pal(DLY_VC),  
+              popup = paste("Road Name: ", locals$ROADNAME , "<br>",
+                            "Total Daily Volume: ", locals$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", locals$DLY_VC
+                            ),
+              group="Locals",
+           
+               ) %>%
+  addPolylines(data=vc, color=~pal(DLY_VC),  
+              popup = paste("Road Name: ", vc$ROADNAME , "<br>",
+                            "Total Daily Volume: ", vc$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", vc$DLY_VC
+                            ),
+              group="All",
+           
+               ) %>%
+
+
+  addLayersControl( baseGroups = c("All","Freeways","Major Arterial", "Minor Arterial", "Locals", "US70"), 
+                   options = layersControlOptions(collapsed = TRUE)) 
+
+
+
+a 
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

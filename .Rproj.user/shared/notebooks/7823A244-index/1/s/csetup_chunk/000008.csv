@@ -1,0 +1,26 @@
+"0","pref_opt <- st_read(""C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp"")
+"
+"1","Reading layer `"
+"1","Hwy Line"
+"1","' from data source "
+"1","`"
+"1","C:\Users\JacobFo\OneDrive - City of Durham\MTP Work\Pref Opt Hwy Line\Highway\Hwy Line.shp"
+"1","' "
+"1","using driver `"
+"1","ESRI Shapefile"
+"1","'"
+"1","
+"
+"1","Simple feature collection with 22882 features and 230 fields"
+"1","
+"
+"1","Geometry type: LINESTRING
+"
+"1","Dimension:     XY
+"
+"1","Bounding box:  "
+"1","xmin: -79.40624 ymin: 35.334 xmax: -78.12458 ymax: 36.49905"
+"1","
+"
+"1","Geodetic CRS:  NAD83
+"
