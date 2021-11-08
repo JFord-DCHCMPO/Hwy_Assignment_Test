@@ -39,10 +39,8 @@ vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hw
 Highway Output Maps {data-icon="ion-android-globe"}
 =====================================  
 
-Row {data-height = 650}
+Row {data-height=850}
 -----------------------------------------------------------------------
-
-
 
 ### PrefOpt - Use Hwy Link filter
 Test Test Test
@@ -150,7 +148,7 @@ a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
 
 ```
 
-Row
+Row {data-height=850}
 -----------------------------------------------------------------------
 
 ### TRM 2016 - Use Hwy Link filter
@@ -266,7 +264,7 @@ a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
 
 
 
-Row
+Row {data-height=450}
 -----------------------------------------------------------------------
 
 
@@ -312,7 +310,7 @@ a <- leaflet()%>%
               group="Total"
                
                )%>%
-      addLegend("bottomright",
+      addLegend("bottomleft",
             pal=pal,
             value=pref_opt$TOTPMVOL,
            # label="Black_2010",
@@ -369,7 +367,7 @@ a <- leaflet()%>%
               group="Total"
                
                )%>%
-      addLegend("bottomright",
+      addLegend("bottomleft",
             pal=pal,
             value=trm_2016$TOTPMVOL,
            # label="Black_2010",
@@ -393,8 +391,11 @@ a
 
 
 
-Row
------------------------------------------------------------------------
+
+
+V-C Ratio {data-icon="ion-ios-calculator"}
+=====================================  
+
 
 
 
