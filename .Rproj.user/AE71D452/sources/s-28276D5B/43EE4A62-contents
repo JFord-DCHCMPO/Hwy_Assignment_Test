@@ -39,13 +39,13 @@ vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hw
 Highway Output Maps {data-icon="ion-android-globe"}
 =====================================  
 
-Row
+Row {data-height = 650}
 -----------------------------------------------------------------------
 
 
 
 ### PrefOpt - Use Hwy Link filter
-This is text. 
+Test Test Test
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -150,6 +150,8 @@ a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
 
 ```
 
+Row
+-----------------------------------------------------------------------
 
 ### TRM 2016 - Use Hwy Link filter
 
@@ -157,13 +159,42 @@ a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
 
 
 
-  
+congested_bins <- c(0,1,3,5, 7, 10)
+
+congested_pal <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+  bins=congested_bins,
+  domain = trm_2016$ABCONGTIME)
+
+add_fc_one <- trm_2016 %>%
+  filter(FCGROUP==1)
+
+add_fc_one <- st_as_sf(add_fc_one)
+
+add_fc_two <- trm_2016 %>%
+  filter(FCGROUP==2)
+
+add_fc_three <- trm_2016 %>%
+  filter(FCGROUP==3)
+
+add_fc_four <- trm_2016 %>%
+  filter(FCGROUP==4)
+
+add_fc_five <- trm_2016 %>%
+  filter(FCGROUP==5)
+
+add_fc_999 <- trm_2016 %>%
+  filter(FCGROUP==999)
+
 bins <- c(0,1000,5000,20000, 50000,100000,200000)  
 
 pal <- colorBin(
   palette = "YlOrRd", na.color = "#808080",
   bins=bins,
-  domain = pref_opt$TOTDLYVOL)
+  domain = trm_2016$TOTDLYVOL)
+
+# risk.bins <-c(0, 0.55, 0.65, 0.75, 0.85, 0.95, 1.0), 
+# risk.pal <- colorBin( "YlOrRd", bins=risk.bins, na.color = "#aaff56")
 
 
 a <- leaflet()%>%
@@ -173,6 +204,20 @@ a <- leaflet()%>%
                             "Total Daily Volume: ", add_fc_one$TOTDLYVOL
                             ),
               group="Freeways"
+               
+               )%>%
+    addPolylines(data=add_fc_one, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total Daily Volume: ", add_fc_one$ABCONGTIME
+                            ),
+              group="AB Cong. Time"
+               
+               )%>%
+      addPolylines(data=add_fc_one, color=~congested_pal(BACONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total Daily Volume: ", add_fc_one$BACONGTIME
+                            ),
+              group="BA Cong. Time"
                
                )%>%
     addPolylines(data=add_fc_two, color=~pal(TOTDLYVOL),  
@@ -192,11 +237,21 @@ a <- leaflet()%>%
       addLegend("bottomright",
             pal=pal,
             value=trm_2016$TOTDLYVOL,
-           # label="Black_2010",
+            group="Volume",
             title="Total Daily Volume") %>%
+
+
   
+      addLegend("bottomleft",
+            pal=congested_pal,
+            value=trm_2016$BACONGTIME,
+            group="BA Cong.Time ",
+            title="Congested Time (Minutes)") %>%
   
-  addLayersControl(overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial")) 
+  addLayersControl(baseGroups = c("AB Cong. Time", "BA Cong. Time", "Volume"),
+                   overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial"),
+                    options = layersControlOptions(collapsed = TRUE))
+
 
 
 
@@ -397,7 +452,7 @@ pal <- colorNumeric(c("green", "yellow", "red"), 0:2)
 
 a <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  setView(-78.83778764614695, 35.94942355920982, zoom=14) %>%
+  setView(-78.83778764614695, 35.94942355920982, zoom=11) %>%
   
     ##US 70
   addPolylines(data=us70, color=~pal(DLY_VC),  
@@ -482,7 +537,141 @@ a
 
 
 
+### TRM 2016 V-C Ratio 
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+bins <- c(0,0.5,1,1.5, 2, 2.5, 3)  
+
+# pal <- colorBin(
+#   palette = "YlOrRd", na.color = "#808080",
+#   bins=bins,
+#   domain = vc_2016$VOC)
+
+
+US70_words <- c("70", 70, "US 70", "US70")
+
+vc_2016$US70Tag <- case_when(
+    grepl(US70_words, vc_2016$ROADNAME) ~ 1,
+        
+)
+
+
+
+
+interstates_express <- vc_2016 %>%
+  filter(vc_2016$FCLASS==11 | vc_2016$FCLASS==12|vc_2016$FCLASS==21)
+
+
+maj_arterials <- vc_2016 %>%
+  filter(vc_2016$FCLASS==13 | vc_2016$FCLASS==22)
+
+min_arterials <- vc_2016 %>%
+  filter(vc_2016$FCLASS==14 | vc_2016$FCLASS==23)
+
+locals  <- vc_2016 %>%
+  filter(vc_2016$FCLASS==15| vc_2016$FCLASS==16 | vc_2016$FCLASS==24 | vc_2016$FCLASS==25|vc_2016$FCLASS==26)
+
+us70  <- vc_2016 %>%
+  filter(vc_2016$US70Tag==1)
+
+
+
+
+# pal <- colorNumeric(
+#   palette = "YlOrRd", na.color = "#808080",
+# #  bins=bins,
+#   domain = vc_2016$VOC)
+
+
+pal <- colorNumeric(c("green", "yellow", "red"), 0:2)
+
+
+a <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.83778764614695, 35.94942355920982, zoom=11) %>%
+  
+    ##US 70
+  addPolylines(data=us70, color=~pal(vc_2016$VOC),  
+              popup = paste("Road Name: ", us70$ROADNAME , "<br>",
+                            "Total Daily Volume: ", us70$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", us70$VOC
+                            ),
+              group="US70",
+           
+               ) %>%
+    addLegend("bottomright",
+            pal=pal,
+            value=us70$VOC,
+          #  label="2020 HH",
+          #  group="US70",
+            title="Volume-to-Capacity Ratio") %>%
+  
+  
+  ##Freeways
+  addPolylines(data=interstates_express, color=~pal(VOC),  
+              popup = paste("Road Name: ", interstates_express$ROADNAME , "<br>",
+                            "Total Daily Volume: ", interstates_express$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", interstates_express$VOC
+                            ),
+              group="Freeways",
+           
+               ) %>%
+
+  
+    ##Major Arterials
+  addPolylines(data=maj_arterials, color=~pal(VOC),  
+              popup = paste("Road Name: ", maj_arterials$ROADNAME , "<br>",
+                            "Total Daily Volume: ", maj_arterials$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", maj_arterials$VOC
+                            ),
+              group="Major Arterial",
+           
+               ) %>%
+
+  
+      ##Minor Arterials
+  addPolylines(data=min_arterials, color=~pal(VOC),  
+              popup = paste("Road Name: ", min_arterials$ROADNAME , "<br>",
+                            "Total Daily Volume: ", min_arterials$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", min_arterials$VOC
+                            ),
+              group="Minor Arterial",
+           
+               ) %>%
+
+    
+      ##Locals 
+  addPolylines(data=locals, color=~pal(VOC),  
+              popup = paste("Road Name: ", locals$ROADNAME , "<br>",
+                            "Total Daily Volume: ", locals$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", locals$VOC
+                            ),
+              group="Locals",
+           
+               ) %>%
+  addPolylines(data=vc_2016, color=~pal(VOC),  
+              popup = paste("Road Name: ", vc_2016$ROADNAME , "<br>",
+                            "Total Daily Volume: ", vc_2016$TOTDLYVOL, "<br>",
+                            "Total V-C Ratio: ", vc_2016$VOC
+                            ),
+              group="All",
+           
+               ) %>%
+
+
+  addLayersControl( baseGroups = c("All","Freeways","Major Arterial", "Minor Arterial", "Locals", "US70"), 
+                   options = layersControlOptions(collapsed = TRUE)) 
+
+
+
+a 
+
+
+
+```
 
 
 
