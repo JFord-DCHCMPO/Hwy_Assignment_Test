@@ -1,6 +1,7 @@
 ---
 title: "Triangle Regional Model Highway Metrics"
 author: "Jacob Ford DCHC MPO"
+output_dir: docs
 output: 
   flexdashboard::flex_dashboard:
     theme: paper

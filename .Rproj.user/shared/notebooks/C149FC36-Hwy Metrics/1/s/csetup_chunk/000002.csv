@@ -1,0 +1,149 @@
+"0","library(flexdashboard)"
+"2","package ‘flexdashboard’ was built under R version 4.0.5"
+"0","library(xlsx)"
+"0","library(readxl)"
+"0","library(plotly)"
+"2","Loading required package: ggplot2
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"2","
+Attaching package: ‘plotly’
+
+"
+"2","The following object is masked from ‘package:ggplot2’:
+
+    last_plot
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"2","The following object is masked from ‘package:graphics’:
+
+    layout
+
+"
+"0","library(sf)"
+"2","package ‘sf’ was built under R version 4.0.5"
+"2","Linking to GEOS 3.9.1, GDAL 3.2.1, PROJ 7.2.1
+"
+"0","library(dplyr)"
+"2","package ‘dplyr’ was built under R version 4.0.5"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(tidygeocoder)"
+"0","library(leaflet)"
+"0","library(rgdal)"
+"2","package ‘rgdal’ was built under R version 4.0.5"
+"2","Loading required package: sp
+"
+"2","Please note that rgdal will be retired by the end of 2023,
+plan transition to sf/stars/terra functions using GDAL and PROJ
+at your earliest convenience.
+
+rgdal: version: 1.5-27, (SVN revision 1148)
+Geospatial Data Abstraction Library extensions to R successfully loaded
+Loaded GDAL runtime: GDAL 3.2.1, released 2020/12/29
+Path to GDAL shared files: C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/gdal
+GDAL binary built with GEOS: TRUE 
+Loaded PROJ runtime: Rel. 7.2.1, January 1st, 2021, [PJ_VERSION: 721]
+Path to PROJ shared files: C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/proj
+PROJ CDN enabled: FALSE
+Linking to sp version:1.4-5
+To mute warnings of possible GDAL/OSR exportToProj4() degradation,
+use options(""rgdal_show_exportToProj4_warnings""=""none"") before loading sp or rgdal.
+Overwritten PROJ_LIB was C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/proj
+"
+"0","library(readxl)"
+"0","library(sp)"
+"0","library(ggplot2)"
+"0","library(DT)"
+"0","library(crosstalk)"
+"0",""
+"0","pref_opt <- st_read(""C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp"") "
+"1","Reading layer `"
+"1","Hwy Line"
+"1","' from data source "
+"1","`"
+"1","C:\Users\JacobFo\OneDrive - City of Durham\MTP Work\Pref Opt Hwy Line\Highway\Hwy Line.shp"
+"1","' "
+"1","using driver `"
+"1","ESRI Shapefile"
+"1","'"
+"1","
+"
+"1","Simple feature collection with 22882 features and 230 fields"
+"1","
+"
+"1","Geometry type: LINESTRING
+"
+"1","Dimension:     XY
+"
+"1","Bounding box:  "
+"1","xmin: -79.40624 ymin: 35.334 xmax: -78.12458 ymax: 36.49905"
+"1","
+"
+"1","Geodetic CRS:  NAD83
+"
+"0","pref_opt <-  pref_opt %>%"
+"0","  select(ID, ROADNAME, COUNTY, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, geometry)"
+"0",""
+"0","pref_opt$COUNTY <- tolower(pref_opt$COUNTY)"
+"0",""
+"0","temp <- pref_opt"
+"0",""
+"0","trm_2016 <- st_read(""C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp"")"
+"1","Reading layer `"
+"1","Hwy Line"
+"1","' from data source "
+"1","
+"
+"1","  "
+"1","`"
+"1","C:\Users\JacobFo\OneDrive - City of Durham\Full Model Runs\Original TRMv6.2_2016 - Copy\Input\Highway\Hwy Line.shp"
+"1","' "
+"1","using driver `"
+"1","ESRI Shapefile"
+"1","'"
+"1","
+"
+"1","Simple feature collection with 20567 features and 226 fields"
+"1","
+"
+"1","Geometry type: LINESTRING
+"
+"1","Dimension:     XY
+"
+"1","Bounding box:  "
+"1","xmin: -79.40624 ymin: 35.334 xmax: -78.12458 ymax: 36.49905"
+"1","
+"
+"1","Geodetic CRS:  NAD83
+"
+"0","trm_2016 <- trm_2016 %>%"
+"0","  select(ID, ROADNAME, COUNTY, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, geometry)"
+"0",""
+"0","pref_opt <- SharedData$new(pref_opt)"
+"0",""
+"0",""
