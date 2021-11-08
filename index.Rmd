@@ -22,14 +22,15 @@ library(sp)
 library(ggplot2)
 
 pref_opt <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp") %>%
-  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY)
+  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME)
 
 trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") %>%
-  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY)
+  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME)
 
 
 
 vc <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/VC/PrefOpt2050_hwy_Triangle_1026.shp")
+vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hwy2016shp.shp")
 
 
 ```
@@ -49,6 +50,12 @@ This is text.
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 
+congested_bins <- c(0,1,3,5, 7, 10)
+
+congested_pal <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+  bins=congested_bins,
+  domain = pref_opt$ABCONGTIME)
 
 add_fc_one <- pref_opt %>%
   filter(FCGROUP==1)
@@ -90,6 +97,20 @@ a <- leaflet()%>%
               group="Freeways"
                
                )%>%
+    addPolylines(data=add_fc_one, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total Daily Volume: ", add_fc_one$ABCONGTIME
+                            ),
+              group="AB Cong. Time"
+               
+               )%>%
+      addPolylines(data=add_fc_one, color=~congested_pal(BACONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total Daily Volume: ", add_fc_one$BACONGTIME
+                            ),
+              group="BA Cong. Time"
+               
+               )%>%
     addPolylines(data=add_fc_two, color=~pal(TOTDLYVOL),  
               popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
                             "Total Daily Volume: ", add_fc_two$TOTDLYVOL
@@ -107,11 +128,21 @@ a <- leaflet()%>%
       addLegend("bottomright",
             pal=pal,
             value=pref_opt$TOTDLYVOL,
-           # label="Black_2010",
+            group="Volume",
             title="Total Daily Volume") %>%
+
+
   
+      addLegend("bottomleft",
+            pal=congested_pal,
+            value=pref_opt$BACONGTIME,
+            group="BA Cong.Time ",
+            title="Congested Time (Minutes)") %>%
   
-  addLayersControl(overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial")) 
+  addLayersControl(baseGroups = c("AB Cong. Time", "BA Cong. Time", "Volume"),
+                   overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial"),
+                    options = layersControlOptions(collapsed = TRUE))
+
 
 
 
@@ -299,8 +330,6 @@ a
 
 
 ```
-
-
 
 
 
