@@ -22,10 +22,10 @@ library(sp)
 library(ggplot2)
 
 pref_opt <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp") %>%
-  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME)
+  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME, SPECIAL)
 
 trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") %>%
-  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME)
+  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME,SPECIAL)
 
 
 
@@ -42,8 +42,9 @@ Highway Output Maps {data-icon="ion-android-globe"}
 Row {data-height=850}
 -----------------------------------------------------------------------
 
-### PrefOpt - Use Hwy Link filter
-Test Test Test
+
+### 2050 Congested Time
+Below map shows the 2050 MTP Preferred Option highway network from the Triangle Regional Model. Totaly daily congested time per highway link in minutes are shown:   
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -51,7 +52,7 @@ Test Test Test
 congested_bins <- c(0,1,3,5, 7, 10)
 
 congested_pal <- colorBin(
-  palette = "YlOrRd", na.color = "#808080",
+  palette = "GnYlRd", na.color = "#808080",
   bins=congested_bins,
   domain = pref_opt$ABCONGTIME)
 
@@ -75,6 +76,9 @@ add_fc_five <- pref_opt %>%
 add_fc_999 <- pref_opt %>%
   filter(FCGROUP==999)
 
+no_centroids <- pref_opt %>%
+  filter(FCGROUP != 31)
+
 bins <- c(0,1000,5000,20000, 50000,100000,200000)  
 
 pal <- colorBin(
@@ -86,72 +90,44 @@ pal <- colorBin(
 # risk.pal <- colorBin( "YlOrRd", bins=risk.bins, na.color = "#aaff56")
 
 
+
 a <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolylines(data=add_fc_one, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_one$TOTDLYVOL
-                            ),
-              group="Freeways"
-               
-               )%>%
-    addPolylines(data=add_fc_one, color=~congested_pal(ABCONGTIME),  
-              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_one$ABCONGTIME
+
+    addPolylines(data=no_centroids, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
+                            "Congested Time (Minutes): ", no_centroids$ABCONGTIME
                             ),
               group="AB Cong. Time"
                
                )%>%
-      addPolylines(data=add_fc_one, color=~congested_pal(BACONGTIME),  
-              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_one$BACONGTIME
+      addPolylines(data=no_centroids, color=~congested_pal(BACONGTIME),  
+              popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
+                            "Total Daily Volume: ", no_centroids$BACONGTIME
                             ),
               group="BA Cong. Time"
                
                )%>%
-    addPolylines(data=add_fc_two, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_two$TOTDLYVOL
-                            ),
-              group="Major Arterial"
-               
-               )%>%
-   addPolylines(data=add_fc_three, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", add_fc_three$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_three$TOTDLYVOL
-                            ),
-              group="Minor Arterial"
-               
-               )%>%
-      addLegend("bottomright",
-            pal=pal,
-            value=pref_opt$TOTDLYVOL,
-            group="Volume",
-            title="Total Daily Volume") %>%
-
 
   
       addLegend("bottomleft",
             pal=congested_pal,
-            value=pref_opt$BACONGTIME,
-            group="BA Cong.Time ",
+            value=no_centroids$ABCONGTIME,
+            group="AB Cong.Time ",
             title="Congested Time (Minutes)") %>%
   
-  addLayersControl(baseGroups = c("AB Cong. Time", "BA Cong. Time", "Volume"),
-                   overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial"),
-                    options = layersControlOptions(collapsed = TRUE))
+  addLayersControl(baseGroups = c("AB Cong. Time", "BA Cong. Time"),
+                      )
 
 
 
 
-a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
+a 
 
 ```
 
-Row {data-height=850}
------------------------------------------------------------------------
 
-### TRM 2016 - Use Hwy Link filter
+### 2016 Congested Time
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -811,3 +787,17 @@ ggplotly(p)
 
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

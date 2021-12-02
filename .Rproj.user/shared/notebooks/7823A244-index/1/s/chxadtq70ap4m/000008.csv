@@ -1,0 +1,36 @@
+"0","a <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+
+    addPolylines(data=no_centroids, color=~congested_pal(ABCONGTIME),  
+              popup = paste(""Road Name: "", no_centroids$ROADNAME , ""<br>"",
+                            ""Congested Time (Minutes): "", no_centroids$ABCONGTIME
+                            ),
+              group=""AB Cong. Time""
+               
+               )%>%
+      addPolylines(data=no_centroids, color=~congested_pal(BACONGTIME),  
+              popup = paste(""Road Name: "", no_centroids$ROADNAME , ""<br>"",
+                            ""Total Daily Volume: "", no_centroids$BACONGTIME
+                            ),
+              group=""BA Cong. Time""
+               
+               )%>%
+
+  
+      addLegend(""bottomleft"",
+            pal=congested_pal,
+            value=no_centroids$ABCONGTIME,
+            group=""AB Cong.Time "",
+            title=""Congested Time (Minutes)"") %>%
+  
+  addLayersControl(baseGroups = c(""AB Cong. Time"", ""BA Cong. Time""),
+                        options = layersControlOptions(collapsed = TRUE))
+
+
+
+
+a 
+"
+"2","Error in normalizePath(path.expand(path), winslash, mustWork) : 
+  path[1]=""C:/Users/JacobFo/OneDrive - City of Durham/ITRE Work/Hwy Assignment/Github/Hwy_Assignment_Test/.Rproj.user/shared/notebooks/7823A244-index/1/AE71D452C54688C2/chxadtq70ap4m_t"": The system cannot find the file specified
+"
