@@ -39,9 +39,19 @@ vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hw
 Highway Output Maps {data-icon="ion-android-globe"}
 =====================================  
 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+Congestion and Volume are important metrics in determining travel demand in a region. The maps here show the 2050 and 2016 base year congestion and total volume. 
+
+Congestion is shown as minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now). 
+
+Total volume is shown as total daily volume by time of day. 
+
+
 Row {data-height=850}
 -----------------------------------------------------------------------
-Below maps show congestion in minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now)  
+
 
 ### 2050 Congested Time
  
@@ -390,10 +400,15 @@ a
 V-C Ratio {data-icon="ion-ios-calculator"}
 =====================================  
 
+Inputs {.sidebar}
+-----------------------------------------------------------------------
 
+Volume-to-Capacity is a ratio measuring the demand against the supply of a highway link. 
 
+Row
+-----------------------------------------------------------------------
 
-### PrefOpt V-C Ratio 
+### 2050 V-C Ratio
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -532,7 +547,7 @@ a
 
 
 
-### TRM 2016 V-C Ratio 
+### 2016 V-C Ratio 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 

@@ -39,9 +39,19 @@ vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hw
 Highway Output Maps {data-icon="ion-android-globe"}
 =====================================  
 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+Congestion and Volume are important metrics in determining travel demand in a region. The maps here show the 2050 and 2016 base year congestion and total volume. 
+
+Congestion is shown as minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now). 
+
+Total volume is shown as total daily volume by time of day. 
+
+
 Row {data-height=850}
 -----------------------------------------------------------------------
-Below maps show congestion in minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now)  
+
 
 ### 2050 Congested Time
  
@@ -266,6 +276,28 @@ Row {data-height=850}
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 
+add_fc_one <- pref_opt %>%
+  filter(FCGROUP==1)
+
+add_fc_one <- st_as_sf(add_fc_one)
+
+add_fc_two <- pref_opt %>%
+  filter(FCGROUP==2)
+
+add_fc_three <- pref_opt %>%
+  filter(FCGROUP==3)
+
+add_fc_four <- pref_opt %>%
+  filter(FCGROUP==4)
+
+add_fc_five <- pref_opt %>%
+  filter(FCGROUP==5)
+
+add_fc_999 <- pref_opt %>%
+  filter(FCGROUP==999)
+
+
+
 
 
 bins <- c(0,1000,5000,20000, 50000,100000,200000)  
@@ -390,10 +422,15 @@ a
 V-C Ratio {data-icon="ion-ios-calculator"}
 =====================================  
 
+Inputs {.sidebar}
+-----------------------------------------------------------------------
 
+Volume-to-Capacity is a ratio measuring the demand against the supply of a highway link. 
 
+Row
+-----------------------------------------------------------------------
 
-### PrefOpt V-C Ratio 
+### 2050 V-C Ratio
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -532,7 +569,7 @@ a
 
 
 
-### TRM 2016 V-C Ratio 
+### 2016 V-C Ratio 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
