@@ -278,54 +278,94 @@ Row {data-height=850}
 
 
 
-bins <- c(0,1000,5000,20000, 50000,100000,200000)  
+add_fc_one <- pref_opt %>%
+  filter(FCGROUP==1)
 
-pal <- colorBin(
+add_fc_one <- st_as_sf(add_fc_one)
+
+add_fc_two <- pref_opt %>%
+  filter(FCGROUP==2)
+
+add_fc_three <- pref_opt %>%
+  filter(FCGROUP==3)
+
+
+pal_one <- colorBin(
   palette = "YlOrRd", na.color = "#808080",
-  bins=bins,
-  domain = pref_opt$TOTDLYVOL)
+ # bins=bins,
+  domain = add_fc_one$TOTPMVOL)
 
-# risk.bins <-c(0, 0.55, 0.65, 0.75, 0.85, 0.95, 1.0), 
-# risk.pal <- colorBin( "YlOrRd", bins=risk.bins, na.color = "#aaff56")
+pal_two <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+ # bins=bins,
+  domain = add_fc_two$TOTPMVOL)
+
+pal_three <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+ # bins=bins,
+  domain = add_fc_three$TOTPMVOL)
+
 
 
 a <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolylines(data=pref_opt, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", pref_opt$ROADNAME , "<br>",
-                            "Total AM Volume: ", pref_opt$TOTAMVOL
+  addPolylines(data=add_fc_one,color=~pal_one(TOTAMVOL),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total AM Volume: ", add_fc_one$TOTAMVOL
                             ),
-              group="AM"
+              group="Freeways AM"
                
                )%>%
-    addPolylines(data=pref_opt, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", pref_opt$ROADNAME , "<br>",
-                            "Total PM Volume: ", pref_opt$TOTPMVOL
+    addPolylines(data=add_fc_one, color=~pal_one(TOTPMVOL),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total PM Volume: ", add_fc_one$TOTPMVOL
                             ),
-              group="PM"
+              group="Freeways PM"
                
                )%>%
-   addPolylines(data=pref_opt, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", pref_opt$ROADNAME , "<br>",
-                            "Total Daily Volume: ", pref_opt$TOTDLYVOL
+    addPolylines(data=add_fc_two,color=~pal_two(TOTAMVOL),  
+              popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
+                            "Total AM Volume: ", add_fc_two$TOTAMVOL
                             ),
-              group="Total"
+              group="Major AM"
                
                )%>%
-      addLegend("bottomleft",
-            pal=pal,
-            value=pref_opt$TOTPMVOL,
-           # label="Black_2010",
-            title="Total Daily Volume") %>%
+    addPolylines(data=add_fc_two, color=~pal_two(TOTPMVOL),  
+              popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
+                            "Total PM Volume: ", add_fc_two$TOTPMVOL
+                            ),
+              group="Major PM"
+               
+               )%>%
+      addPolylines(data=add_fc_three,color=~pal_three(TOTAMVOL),  
+              popup = paste("Road Name: ", add_fc_three$ROADNAME , "<br>",
+                            "Total AM Volume: ", add_fc_three$TOTAMVOL
+                            ),
+              group="Minor AM"
+               
+               )%>%
+    addPolylines(data=add_fc_three, color=~pal_three(TOTPMVOL),  
+              popup = paste("Road Name: ", add_fc_three$ROADNAME , "<br>",
+                            "Total PM Volume: ", add_fc_three$TOTPMVOL
+                            ),
+              group="Minor PM"
+               
+               )%>%
+
+      addLegend("bottomright",
+            pal=pal_one,
+            value=add_fc_one$TOTPMVOL,
+         #   group="Freeways AM",
+            title="Volume") %>%
   
   
-  addLayersControl(baseGroups = c("AM", "PM", "Total"),
-                    options = layersControlOptions(collapsed = TRUE)) 
+
+  
+  addLayersControl(baseGroups = c("Freeways AM", " Freeways PM", "Major AM", "Major PM", "Minor AM", "Minor PM"),
+                   options = layersControlOptions(collapsed = TRUE))
 
 
-
-a
-
+a 
 ```
 
 <!-- Row {data-height=850} -->
@@ -336,54 +376,94 @@ a
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 
+add_fc_one <- trm_2016 %>%
+  filter(FCGROUP==1)
 
-bins <- c(0,1000,5000,20000, 50000,100000,200000)  
+add_fc_one <- st_as_sf(add_fc_one)
 
-pal <- colorBin(
+add_fc_two <- trm_2016 %>%
+  filter(FCGROUP==2)
+
+add_fc_three <- trm_2016 %>%
+  filter(FCGROUP==3)
+
+
+pal_one <- colorBin(
   palette = "YlOrRd", na.color = "#808080",
-  bins=bins,
-  domain = trm_2016$TOTDLYVOL)
+ # bins=bins,
+  domain = add_fc_one$TOTPMVOL)
 
-# risk.bins <-c(0, 0.55, 0.65, 0.75, 0.85, 0.95, 1.0), 
-# risk.pal <- colorBin( "YlOrRd", bins=risk.bins, na.color = "#aaff56")
+pal_two <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+ # bins=bins,
+  domain = add_fc_two$TOTPMVOL)
+
+pal_three <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+ # bins=bins,
+  domain = add_fc_three$TOTPMVOL)
+
 
 
 a <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolylines(data=trm_2016, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", trm_2016$ROADNAME , "<br>",
-                            "Total AM Volume: ", trm_2016$TOTAMVOL
+  addPolylines(data=add_fc_one,color=~pal_one(TOTAMVOL),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total AM Volume: ", add_fc_one$TOTAMVOL
                             ),
-              group="AM"
+              group="Freeways AM"
                
                )%>%
-    addPolylines(data=trm_2016, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", trm_2016$ROADNAME , "<br>",
-                            "Total PM Volume: ", trm_2016$TOTPMVOL
+    addPolylines(data=add_fc_one, color=~pal_one(TOTPMVOL),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Total PM Volume: ", add_fc_one$TOTPMVOL
                             ),
-              group="PM"
+              group="Freeways PM"
                
                )%>%
-   addPolylines(data=trm_2016, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", trm_2016$ROADNAME , "<br>",
-                            "Total Daily Volume: ", trm_2016$TOTDLYVOL
+    addPolylines(data=add_fc_two,color=~pal_two(TOTAMVOL),  
+              popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
+                            "Total AM Volume: ", add_fc_two$TOTAMVOL
                             ),
-              group="Total"
+              group="Major AM"
                
                )%>%
-      addLegend("bottomleft",
-            pal=pal,
-            value=trm_2016$TOTPMVOL,
-           # label="Black_2010",
-            title="Total Daily Volume") %>%
+    addPolylines(data=add_fc_two, color=~pal_two(TOTPMVOL),  
+              popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
+                            "Total PM Volume: ", add_fc_two$TOTPMVOL
+                            ),
+              group="Major PM"
+               
+               )%>%
+      addPolylines(data=add_fc_three,color=~pal_three(TOTAMVOL),  
+              popup = paste("Road Name: ", add_fc_three$ROADNAME , "<br>",
+                            "Total AM Volume: ", add_fc_three$TOTAMVOL
+                            ),
+              group="Minor AM"
+               
+               )%>%
+    addPolylines(data=add_fc_three, color=~pal_three(TOTPMVOL),  
+              popup = paste("Road Name: ", add_fc_three$ROADNAME , "<br>",
+                            "Total PM Volume: ", add_fc_three$TOTPMVOL
+                            ),
+              group="Minor PM"
+               
+               )%>%
+
+      addLegend("bottomright",
+            pal=pal_one,
+            value=add_fc_one$TOTPMVOL,
+         #   group="Freeways AM",
+            title="Volume") %>%
   
   
-  addLayersControl(baseGroups = c("AM", "PM", "Total"),
-                    options = layersControlOptions(collapsed = TRUE)) 
+
+  
+  addLayersControl(baseGroups = c("Freeways AM", " Freeways PM", "Major AM", "Major PM", "Minor AM", "Minor PM"),
+                   options = layersControlOptions(collapsed = TRUE))
 
 
-
-a
+a 
 
 
 ```
