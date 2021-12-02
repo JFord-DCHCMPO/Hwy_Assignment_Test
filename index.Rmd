@@ -41,10 +41,10 @@ Highway Output Maps {data-icon="ion-android-globe"}
 
 Row {data-height=850}
 -----------------------------------------------------------------------
-
+Below maps show congestion in minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now)  
 
 ### 2050 Congested Time
-Below map shows the 2050 MTP Preferred Option highway network from the Triangle Regional Model. Totaly daily congested time per highway link in minutes are shown:   
+ 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -93,36 +93,57 @@ pal <- colorBin(
 
 a <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
+    addPolylines(data=add_fc_one, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Congested Time (Minutes): ", add_fc_one$ABCONGTIME
+                            ),
+              group="Freeways"
+               
+               )%>%
+      addPolylines(data=add_fc_two, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Congested Time (Minutes): ", add_fc_one$ABCONGTIME
+                            ),
+              group="Major Arterial"
+               
+               )%>%
+      addPolylines(data=add_fc_three, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Congested Time (Minutes): ", add_fc_one$ABCONGTIME
+                            ),
+              group="Minor Arterial"
+               
+               )%>%
 
-    addPolylines(data=no_centroids, color=~congested_pal(ABCONGTIME),  
-              popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
-                            "Congested Time (Minutes): ", no_centroids$ABCONGTIME
-                            ),
-              group="AB Cong. Time"
-               
-               )%>%
-      addPolylines(data=no_centroids, color=~congested_pal(BACONGTIME),  
-              popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
-                            "Total Daily Volume: ", no_centroids$BACONGTIME
-                            ),
-              group="BA Cong. Time"
-               
-               )%>%
+    # addPolylines(data=no_centroids, color=~congested_pal(ABCONGTIME),  
+    #           popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
+    #                         "Congested Time (Minutes): ", no_centroids$ABCONGTIME
+    #                         ),
+    #           group="AB Cong. Time"
+    #            
+    #            )%>%
+    #   addPolylines(data=no_centroids, color=~congested_pal(BACONGTIME),  
+    #           popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
+    #                         "Total Daily Volume: ", no_centroids$BACONGTIME
+    #                         ),
+    #           group="BA Cong. Time"
+    #            
+    #            )%>%
 
   
       addLegend("bottomleft",
             pal=congested_pal,
-            value=no_centroids$ABCONGTIME,
-            group="AB Cong.Time ",
+            value=pref_opt$ABCONGTIME,
+           # group="AB Cong.Time ",
             title="Congested Time (Minutes)") %>%
   
-  addLayersControl(baseGroups = c("AB Cong. Time", "BA Cong. Time"),
-                        options = layersControlOptions(collapsed = TRUE))
+  addLayersControl(  overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial"),
+                    options = layersControlOptions(collapsed = TRUE))
 
 
 
 
-a 
+a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
 
 ```
 
@@ -173,63 +194,58 @@ pal <- colorBin(
 
 a <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolylines(data=add_fc_one, color=~pal(TOTDLYVOL),  
+    addPolylines(data=add_fc_one, color=~congested_pal(ABCONGTIME),  
               popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_one$TOTDLYVOL
+                            "Congested Time (Minutes): ", add_fc_one$ABCONGTIME
                             ),
               group="Freeways"
                
                )%>%
-    addPolylines(data=add_fc_one, color=~congested_pal(ABCONGTIME),  
+      addPolylines(data=add_fc_two, color=~congested_pal(ABCONGTIME),  
               popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_one$ABCONGTIME
-                            ),
-              group="AB Cong. Time"
-               
-               )%>%
-      addPolylines(data=add_fc_one, color=~congested_pal(BACONGTIME),  
-              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_one$BACONGTIME
-                            ),
-              group="BA Cong. Time"
-               
-               )%>%
-    addPolylines(data=add_fc_two, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", add_fc_two$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_two$TOTDLYVOL
+                            "Congested Time (Minutes): ", add_fc_one$ABCONGTIME
                             ),
               group="Major Arterial"
                
                )%>%
-   addPolylines(data=add_fc_three, color=~pal(TOTDLYVOL),  
-              popup = paste("Road Name: ", add_fc_three$ROADNAME , "<br>",
-                            "Total Daily Volume: ", add_fc_three$TOTDLYVOL
+      addPolylines(data=add_fc_three, color=~congested_pal(ABCONGTIME),  
+              popup = paste("Road Name: ", add_fc_one$ROADNAME , "<br>",
+                            "Congested Time (Minutes): ", add_fc_one$ABCONGTIME
                             ),
               group="Minor Arterial"
                
                )%>%
-      addLegend("bottomright",
-            pal=pal,
-            value=trm_2016$TOTDLYVOL,
-            group="Volume",
-            title="Total Daily Volume") %>%
 
+    # addPolylines(data=no_centroids, color=~congested_pal(ABCONGTIME),  
+    #           popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
+    #                         "Congested Time (Minutes): ", no_centroids$ABCONGTIME
+    #                         ),
+    #           group="AB Cong. Time"
+    #            
+    #            )%>%
+    #   addPolylines(data=no_centroids, color=~congested_pal(BACONGTIME),  
+    #           popup = paste("Road Name: ", no_centroids$ROADNAME , "<br>",
+    #                         "Total Daily Volume: ", no_centroids$BACONGTIME
+    #                         ),
+    #           group="BA Cong. Time"
+    #            
+    #            )%>%
 
   
       addLegend("bottomleft",
             pal=congested_pal,
-            value=trm_2016$BACONGTIME,
-            group="BA Cong.Time ",
+            value=trm_2016$ABCONGTIME,
+           # group="AB Cong.Time ",
             title="Congested Time (Minutes)") %>%
   
-  addLayersControl(baseGroups = c("AB Cong. Time", "BA Cong. Time", "Volume"),
-                   overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial"),
+  addLayersControl(  overlayGroups = c("Freeways", "Major Arterial", "Minor Arterial"),
                     options = layersControlOptions(collapsed = TRUE))
 
 
 
 
 a %>% hideGroup("Major Arterial") %>% hideGroup("Minor Arterial")
+
 
 ```
 
@@ -245,7 +261,7 @@ Row {data-height=850}
 
 
 
-### PrefOpt - TOD 
+### 2050 Volume by Time of Day
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -305,7 +321,7 @@ a
 <!-- Row {data-height=850} -->
 <!-- ----------------------------------------------------------------------- -->
 
-### TRM 2016 - TOD
+### 2016 Volume by Time of Day
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
