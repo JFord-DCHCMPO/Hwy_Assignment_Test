@@ -1,5 +1,0 @@
-"0","joined_temp <- rbind(temp, temp2)
-"
-"2","Error in match.names(clabs, names(xi)) : 
-  names do not match previous names
-"

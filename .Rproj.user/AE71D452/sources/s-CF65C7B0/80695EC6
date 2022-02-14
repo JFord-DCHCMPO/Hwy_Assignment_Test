@@ -12,13 +12,13 @@
     "properties": {
         "expression": "temp2",
         "caption": "temp2",
-        "totalObservations": "4",
-        "displayedObservations": "4",
+        "totalObservations": "12",
+        "displayedObservations": "12",
         "variables": "2",
-        "cacheKey": "48C30168",
+        "cacheKey": "10201534",
         "object": "temp2",
         "environment": "",
-        "contentUrl": "grid_resource/gridviewer.html?env=&obj=temp2&cache_key=48C30168&max_cols=50",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=temp2&cache_key=10201534&max_cols=50",
         "preview": "0",
         "source_window_id": "",
         "Source": "Source"

@@ -1,4 +1,11 @@
-"0","add_counts <- left_join(v, v_counts)
+"0","v_counts <- read_tcad(""C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/EvalModule/TRM6_Count_2016_Observed.bin"") %>%
+  select(ID, Daily_Counts)
+
+v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
+
+
+
+add_counts <- left_join(v, v_counts)
 "
 "2","Joining, by = ""ID""
 "
