@@ -33,28 +33,39 @@ library(ggplot2)
 library(caliperR)
 library(tcadr)
 
+g2 <-  read_tcad("C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.bin") %>%
+  select(ID, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, County, AreaType, MPO)
+
+g2 <- g2 %>%
+  filter(Total_Flow_Daily > 0) 
+
+freeway <- paste("Freeway", "Highway", sep="|")
+p_art <- paste("MajorArterial")
+m_art <- paste("Arterial")
+collect <- paste("Collector")
 
 
-pref_opt <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp") %>%
-  select(ID, COUNTY, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME, SPECIAL)
-
-trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") %>%  select(ID, COUNTY, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME,SPECIAL)
-
-
-g <- read_bin("C:/Users/JacobFo/TRMG2_v0.1/scenarios/base_2016/output/networks/scenario_links.bin") %>%
-  select(ID, RoadNAme, Total_Flow_Daily, Total_VMT_Daily)
-
+g2$FC_Group = case_when(
+  grepl(freeway, g2$HCMType) ~ "Freeway",
+  grepl(p_art, g2$HCMType) ~ "Major Arterial",
+  grepl(m_art, g2$HCMType) ~ "Minor Arterial",
+  grepl(collect, g2$HCMType) ~ "Collector",
+  TRUE~"Local"
+)
 
 
-vc <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/VC/PrefOpt2050_hwy_Triangle_1026.shp")
-vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hwy2016shp.shp")
 
+v <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Highway_Line.bin") 
+
+
+v$Tot_VMT <- sum(v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT,v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT )
 
 v_counts <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/EvalModule/TRM6_Count_2016_Observed.bin") %>%
-  select(ID, Daily.Counts)
+  select(ID, Daily_Counts)
 
+v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
 
-add_counts <- left_join(trm_2016, v_counts)
+add_counts <- left_join(v, v_counts)
 
 
 sum_by_county <- add_counts %>%

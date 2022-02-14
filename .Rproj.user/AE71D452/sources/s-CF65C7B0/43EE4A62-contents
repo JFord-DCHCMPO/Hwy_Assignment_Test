@@ -56,20 +56,19 @@ g2$FC_Group = case_when(
 
 
 v <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Highway_Line.bin") 
+v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
 
-
-v$Tot_VMT <- sum(v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT,v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT )
 
 v_counts <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/EvalModule/TRM6_Count_2016_Observed.bin") %>%
   select(ID, Daily_Counts)
 
-v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
+
 
 add_counts <- left_join(v, v_counts)
 
 
 sum_by_county <- add_counts %>%
-  st_drop_geometry() %>%
+  #st_drop_geometry() %>%
   filter(Daily.Counts > 0) %>%
   group_by(COUNTY) %>%
   summarize(Total_Trips = sum(TOTDLYVOL, na.rm=T),

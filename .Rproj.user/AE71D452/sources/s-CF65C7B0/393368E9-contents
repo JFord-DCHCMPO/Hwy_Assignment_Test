@@ -48,18 +48,92 @@ g2$FC_Group = case_when(
 
 v <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Highway_Line.bin") 
 
+v[is.na(v)]<-0
 
-v$Tot_VMT <- sum(v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT,v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT )
 
 v_counts <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/EvalModule/TRM6_Count_2016_Observed.bin") %>%
   select(ID, Daily_Counts)
 
 v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
 
+
+
 add_counts <- left_join(v, v_counts)
 
 
 ```
+
+##Total Volume by MPO
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(kableExtra)
+
+temp <- add_counts %>%
+  filter(Daily_Counts > 0) %>%
+  mutate(MPO_Tag = case_when(
+    is.na(MPO) ~ 'None',
+    MPO == 0 ~ 'None',
+    MPO == 1 ~ 'CAMPO',
+    MPO == 2 ~ 'DCHC'
+  )) %>%
+  group_by(MPO_Tag) %>%
+ # filter(Daily_Counts > 0) %>%
+   summarise(
+    Total_Volume = sum(ToTDlyVol, na.rm=T),
+    Total_Counts = sum(Daily_Counts, na.rm=T),
+    Count=n()) %>%
+  adorn_totals('row')%>%
+  mutate(PctDiff = (Total_Volume-Total_Counts)/Total_Volume)
+
+temp %>%
+  kbl(caption = "TRMv6.2 Total Volume by MPO") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+
+temp2 <- g2 %>%
+  filter(DailyCount > 0) %>%
+  mutate(MPO_Tag = case_when(
+    MPO=="" ~ 'None',
+    MPO == "None" ~ 'None',
+    MPO == "CAMPO" ~ 'CAMPO',
+    MPO == "DCHC" ~ 'DCHC'
+  )) %>%
+  group_by(MPO_Tag) %>%
+   summarise(
+    Total_Volume = sum(Total_Flow_Daily, na.rm=T),
+    Total_Counts = sum(DailyCount, na.rm=T),
+    Count=n())%>%
+  adorn_totals('row')%>%
+  mutate(PctDiff = (Total_Volume-Total_Counts)/Total_Volume)
+
+temp2 %>%
+  kbl(caption = "TRMG2 Total Volume by MPO") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+
+### Difference
+
+```{r}
+
+names(temp)[1] <- 'mpo'
+names(temp)[2] <- 'vol_v6'
+names(temp2)[2] <- 'vol_g2'
+
+joined_temp <- cbind(temp, temp2) %>% 
+  select(MPO=MPO_Tag, vol_v6, vol_g2) %>%
+  filter(MPO != "Total") %>%
+  mutate(PctDiff = (vol_g2 - vol_v6)/vol_g2)
+
+p <- ggplot(data=joined_temp, aes(x=reorder(MPO, -PctDiff), y=PctDiff)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ggtitle("MPO Level Total Daily Volume Pct Difference")
+
+ggplotly(p) 
+
+
+```
+
+
 
 ##Total Volume by County
 
@@ -67,18 +141,22 @@ add_counts <- left_join(v, v_counts)
 
 temp <- add_counts %>%
   group_by(COUNTY) %>%
+  filter(COUNTY != "External") %>%
   filter(Daily_Counts > 0) %>%
   filter(COUNTY != "") %>% ##filters empty space for tagged links with no counties 
   summarise(
     Total_Volume = sum(ToTDlyVol, na.rm=T),
     Total_Counts = sum(Daily_Counts, na.rm=T),
-    Diff = (Total_Volume-Total_Counts )/Total_Volume,
     Count=n()) %>%
-  arrange(Diff) #%>%
- # adorn_totals('row') 
+  add_row(COUNTY = 'Alamance', Total_Volume = 0, Total_Counts = 0,  Count = 0) %>%
+  arrange(COUNTY) %>%
+  adorn_totals('row')  %>%
+  mutate(PctDiff = (Total_Volume-Total_Counts)/Total_Volume)
 
 
-
+temp %>%
+  kbl(caption = "TRMv6.2 Total Volume by County") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 
 
 temp2 <- g2 %>%
@@ -88,29 +166,143 @@ temp2 <- g2 %>%
   summarise(
     Total_Volume = sum(Total_Flow_Daily, na.rm=T),
     Total_Counts = sum(DailyCount, na.rm=T),
-    Diff = (Total_Volume-Total_Counts )/Total_Volume,
     Count=n()) %>%
-  arrange(Diff) #%>%
- # adorn_totals('row') 
+  arrange(County) %>%
+  adorn_totals('row') %>%
+  mutate(PctDiff = (Total_Volume-Total_Counts)/Total_Volume)
 
-
+temp2 %>%
+  kbl(caption = "TRMG2 Total Volume by County") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 
 ```
+
+### Difference
 
 ```{r}
-library(ggplot2)
-
-## Bar Plot
-p <- ggplot(data=temp, aes(x=reorder(COUNTY, -Diff), y=Diff)) +geom_bar(stat='identity', position='dodge')
-
-p + ggtitle("County Level Total Daily Volume Difference")
 
 
-##Histogram 
-# 
-# hist_graph <- ggplot(add_counts, aes(ToTDlyVol)) + geom_histogram()
-# hist_graph
+names(temp)[2] <- 'vol_v6'
+names(temp2)[2] <- 'vol_g2'
+
+joined_temp <- cbind(temp, temp2) %>% 
+  select(County, vol_v6, vol_g2) %>%
+  filter(County != "Total") %>%
+  mutate(PctDiff = (vol_g2 - vol_v6)/vol_g2)
+
+p <- ggplot(data=joined_temp, aes(x=reorder(County, -PctDiff), y=PctDiff)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ggtitle("County Level Total Daily Volume Pct Difference")
+
+ggplotly(p) 
+
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##Total VMT by MPO
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(kableExtra)
+
+
+
+temp <- add_counts %>%
+ # filter(Daily_Counts > 0) %>%
+  mutate(MPO_Tag = case_when(
+    is.na(MPO) ~ 'None',
+    MPO == 0 ~ 'None',
+    MPO == 1 ~ 'CAMPO',
+    MPO == 2 ~ 'DCHC'
+  )) %>%
+  group_by(MPO_Tag) %>%
+ # filter(Daily_Counts > 0) %>%
+   summarise(
+    Total_Volume = sum(ToT_VMT, na.rm=T)) %>%
+  adorn_totals('row')
+
+temp %>%
+  kbl(caption = "TRMv6.2 Total VMT by MPO") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+
+temp2 <- g2 %>%
+ # filter(DailyCount > 0) %>%
+  mutate(MPO_Tag = case_when(
+    MPO=="" ~ 'None',
+    MPO == "None" ~ 'None',
+    MPO == "CAMPO" ~ 'CAMPO',
+    MPO == "DCHC" ~ 'DCHC'
+  )) %>%
+  group_by(MPO_Tag) %>%
+   summarise(
+    Total_Volume = sum(Total_VMT_Daily, na.rm=T))%>%
+  adorn_totals('row')
+
+temp2 %>%
+  kbl(caption = "TRMG2 Total VMT by MPO") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+
+### Difference
+
+```{r}
+
+names(temp)[1] <- 'mpo'
+names(temp)[2] <- 'vol_v6'
+names(temp2)[2] <- 'vol_g2'
+
+joined_temp <- rbind(temp, temp2) %>% 
+  select(MPO=MPO_Tag, vol_v6, vol_g2) %>%
+  filter(MPO != "Total") %>%
+  mutate(PctDiff = (vol_g2 - vol_v6)/vol_g2)
+
+p <- ggplot(data=joined_temp, aes(x=reorder(MPO, -PctDiff), y=PctDiff)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ggtitle("MPO Level Total Daily Volume Pct Difference")
+
+ggplotly(p) 
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
