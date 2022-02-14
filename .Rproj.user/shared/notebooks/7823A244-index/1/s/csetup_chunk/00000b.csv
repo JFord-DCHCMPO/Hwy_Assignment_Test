@@ -1,0 +1,7 @@
+"0","
+g <- read_bin(""C:/Users/JacobFo/TRMG2_v0.1/scenarios/base_2016/output/networks/scenario_links.bin"") %>%
+  select(ID, RoadNAme, Total_Flow_Daily, Total_VMT_Daily)
+"
+"2","Error in (function (..., row.names = NULL, check.rows = FALSE, check.names = TRUE,  : 
+  arguments imply differing number of rows: 127643, 63821
+"

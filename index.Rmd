@@ -7,6 +7,16 @@ output:
 
 ---
 
+
+
+base functions
+
+- group trips, VMT, VHT by PASA/District in TRMG2 - easy summary to get trip level data
+- different pages of dashboards can focus on different tasks
+
+  * daily counts
+  * scenario difference - county and link level data difference between one scenario and another 
+
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(xlsx)
@@ -20,17 +30,42 @@ library(rgdal)
 library(readxl)
 library(sp)
 library(ggplot2)
+library(caliperR)
+library(tcadr)
+
+
 
 pref_opt <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/Highway/Hwy Line.shp") %>%
-  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME, SPECIAL)
+  select(ID, COUNTY, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME, SPECIAL)
 
-trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") %>%
-  select(ID, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME,SPECIAL)
+trm_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") %>%  select(ID, COUNTY, FCGROUP, TOTDLYVOL, TOTAMVOL, TOTPMVOL, ROADNAME, COUNTY, ABCONGTIME, BACONGTIME,SPECIAL)
+
+
+g <- read_bin("C:/Users/JacobFo/TRMG2_v0.1/scenarios/base_2016/output/networks/scenario_links.bin") %>%
+  select(ID, RoadNAme, Total_Flow_Daily, Total_VMT_Daily)
 
 
 
 vc <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/Pref Opt Hwy Line/VC/PrefOpt2050_hwy_Triangle_1026.shp")
 vc_2016 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRMv6.2 Inputs/Hwy2016shp.shp")
+
+
+v_counts <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/EvalModule/TRM6_Count_2016_Observed.bin") %>%
+  select(ID, Daily.Counts)
+
+
+add_counts <- left_join(trm_2016, v_counts)
+
+
+sum_by_county <- add_counts %>%
+  st_drop_geometry() %>%
+  filter(Daily.Counts > 0) %>%
+  group_by(COUNTY) %>%
+  summarize(Total_Trips = sum(TOTDLYVOL, na.rm=T),
+            Total_Counts = sum(Daily.Counts, na.rm=T)) %>%
+  mutate(Diff = Total_Trips - Total_Counts)
+
+sum_by_county
 
 
 ```

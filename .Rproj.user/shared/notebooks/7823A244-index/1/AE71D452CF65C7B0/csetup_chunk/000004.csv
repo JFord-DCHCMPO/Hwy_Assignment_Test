@@ -1,0 +1,43 @@
+"0","
+freeway <- paste(""Freeway"", ""Highway"", sep=""|"")
+p_art <- paste(""MajorArterial"")
+m_art <- paste(""Arterial"")
+collect <- paste(""Collector"")
+
+
+g2$FC_Group = case_when(
+  grepl(freeway, g2$HCMType) ~ ""Freeway"",
+  grepl(p_art, g2$HCMType) ~ ""Major Arterial"",
+  grepl(m_art, g2$HCMType) ~ ""Minor Arterial"",
+  grepl(collect, g2$HCMType) ~ ""Collector"",
+  TRUE~""Local""
+)
+
+
+
+v <- read_tcad(""C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Highway_Line.bin"") 
+
+
+v$Tot_VMT <- sum(v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT,v$BAAMVMT, v$BAMDVMT, v$BANTVMT, v$BAPMVMT )
+
+v_counts <- read_tcad(""C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/EvalModule/TRM6_Count_2016_Observed.bin"") %>%
+  select(ID, Daily_Counts)
+
+v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
+
+add_counts <- left_join(v, v_counts)
+"
+"2","Joining, by = ""ID""
+"
+"0",""
+"0",""
+"0","sum_by_county <- add_counts %>%"
+"0","  st_drop_geometry() %>%"
+"0","  filter(Daily.Counts > 0) %>%"
+"0","  group_by(COUNTY) %>%"
+"0","  summarize(Total_Trips = sum(TOTDLYVOL, na.rm=T),"
+"0","            Total_Counts = sum(Daily.Counts, na.rm=T)) %>%"
+"0","  mutate(Diff = Total_Trips - Total_Counts)"
+"2","Error in st_drop_geometry(.) : 
+  st_drop_geometry only works with objects of class sf
+"
