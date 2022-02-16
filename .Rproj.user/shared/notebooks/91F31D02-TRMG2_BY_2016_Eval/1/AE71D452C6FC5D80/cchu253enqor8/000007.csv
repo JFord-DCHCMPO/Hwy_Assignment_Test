@@ -1,0 +1,25 @@
+"0","temp <- add_counts %>% 
+  mutate(SL_Tag = case_when(
+    Screenline == 3 ~ ""I-85"",
+    Screenline == 6 ~ ""I-40"",
+    Screenline == 10 ~ ""Wake/Durham County Line"",
+  
+  )) %>%
+  filter(!is.na(SL_Tag)) %>%
+  group_by(SL_Tag) %>%
+  filter(Daily_Counts > 0) %>%
+ # filter(COUNTY != """") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    Total_Volume = sum(ToTDlyVol, na.rm=T),
+    Total_Counts = sum(Daily_Counts, na.rm=T),
+    Count=n()) %>%
+  arrange(Total_Volume) %>%
+ # adorn_totals('row')  %>%
+  mutate(PctDiff = (Total_Volume-Total_Counts)/Total_Volume) 
+
+
+temp %>%
+  kbl(caption = ""TRMv6.2 Total Volume by Facility"") %>%
+  kable_classic(full_width = F, html_font = ""Cambria"")
+"
+"0",""
