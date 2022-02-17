@@ -718,6 +718,7 @@ Column {.tabset}
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 temp2 <- g2 %>%
+  st_drop_geometry() %>%
   group_by(County) %>%
   filter(DailyCount > 0) %>%
   filter(County != "") %>% ##filters empty space for tagged links with no counties 
@@ -726,7 +727,7 @@ temp2 <- g2 %>%
   arrange(County) %>%
   mutate(Output= "Total Flow")
 
-temp <- g2 %>%
+temp <- g2 %>%  st_drop_geometry()
   group_by(County) %>%
   filter(DailyCount > 0) %>%
   filter(County != "") %>% ##filters empty space for tagged links with no counties 
