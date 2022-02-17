@@ -705,15 +705,18 @@ cong_map
 
 
 
-Summary Stats {data-icon="ion-stats-bars"}
+Summary Stats {.storyboard data-icon="ion-stats-bars"}
 =====================================  
 
 
-
-Column {.tabset}
------------------------------------------------------------------------
-
 ### Total Volume
+
+To do:
+
+- Add following:
+Total Flow, VMT, 
+by HH, by HH_Pop
+on MPO and County level
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
