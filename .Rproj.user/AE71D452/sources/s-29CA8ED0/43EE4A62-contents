@@ -157,7 +157,7 @@ volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flo
 
 vol_map <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%
   addPolylines(data=local,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total Flow: ", local$Total_Flow_Daily
@@ -243,7 +243,7 @@ volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_
 
 vol_map <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=local,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total PM Flow: ", local$Tot_Flow_PM
@@ -327,7 +327,7 @@ volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_
 
 vol_map <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>% 
   addPolylines(data=local,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total AM Flow: ", local$Tot_Flow_AM
@@ -407,20 +407,10 @@ vol_map
 
 
 
-Volume to Capacity Ratio {data-icon="ion-car-outline"}
+Volume to Capacity Ratio {.storyboard data-icon="ion-car-outline"}
 =====================================  
 
 
-
-
-Inputs {.sidebar}
------------------------------------------------------------------------
-
-Volume-to-Capacity is a ratio measuring the demand against the supply of a highway link. 
-
-
-Row 
------------------------------------------------------------------------
 
 
 
@@ -442,7 +432,7 @@ congested_pal <- colorBin(
 
 cong_map <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=local,color=~congested_pal(Total_Delay_Daily),  
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total Delay: ", local$Total_Delay_Daily
@@ -505,11 +495,9 @@ cong_map
 
 
 
+***
 
-
-
-Row
------------------------------------------------------------------------
+Here is some commentary on graph 1
 
 
 ### AM VOC
@@ -528,7 +516,7 @@ congested_pal <- colorBin(
 
 cong_map <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=local,color=~congested_pal(Max_VOC_AM),  
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "AM VOC: ", local$Max_VOC_AM
@@ -591,6 +579,10 @@ cong_map
 
 
 
+***
+
+Here is some commentary on graph 2
+
 
 ### PM VOC
 
@@ -610,7 +602,7 @@ congested_pal <- colorBin(
 
 cong_map <- leaflet()%>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=local,color=~congested_pal(Max_VOC_PM),  
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "PM VOC: ", local$Max_VOC_PM
@@ -685,6 +677,10 @@ cong_map
 
 
 
+
+***
+
+Here is some commentary on graph 3
 
 
 
