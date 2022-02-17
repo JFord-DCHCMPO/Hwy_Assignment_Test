@@ -4,6 +4,7 @@ author: "Jacob Ford DCHC MPO"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
+    storyboard: true
     theme:
        version: 5
 
@@ -50,6 +51,17 @@ g2 <- cbind(temp, g2_geo)
 g2$County <- tolower(g2$County)
 
 
+
+temp <- read_tcad("C:/Users/JacobFo/TRMG2_v0.2/master/sedata/se_2020.bin") %>%
+  filter(Type !="External")
+
+get_counties <-read_tcad("C:/Users/JacobFo/TRMG2_v0.2/master/tazs/master_tazs.bin") %>% select(TAZ = ID,  County) 
+
+se_2020 <- merge(temp, get_counties)
+
+
+##  
+  
 v <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016 - Copy/Input/Highway/Hwy Line.shp") 
 
 ##Add VMT field
