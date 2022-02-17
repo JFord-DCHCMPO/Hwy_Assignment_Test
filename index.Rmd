@@ -11,13 +11,6 @@ output:
 
 
 
-base functions
-
-- group trips, VMT, VHT by PASA/District in TRMG2 - easy summary to get trip level data
-- different pages of dashboards can focus on different tasks
-
-  * daily counts
-  * scenario difference - county and link level data difference between one scenario and another 
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -42,7 +35,8 @@ library(knitr)
 
 temp <-  read_tcad("C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.bin") %>%
   filter(Total_Flow_Daily > 0) %>%
-  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO)
+  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,
+         Tot_Flow_AM, Tot_Flow_PM)
 
 g2_geo <-  st_read("C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.shp")
 
@@ -77,33 +71,6 @@ v_counts <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Run
 ##Final TRMv6.2 line layer with counts
 add_counts <- left_join(v, v_counts)
 
-
-
-
-```
-
-
-Highway Assignment Maps {data-icon="ion-android-globe"}
-=====================================  
-
-
-Inputs {.sidebar}
------------------------------------------------------------------------
-Congestion and Volume are important metrics in determining travel demand in a region. The maps here show the 2050 and 2016 base year congestion and total volume. 
-
-Congestion is shown as minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now). 
-
-Total volume is shown as total daily volume by time of day. 
-
-
-Row {data-height=850}
------------------------------------------------------------------------
-
-
-### Congested Time
- 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
 g2 <- st_as_sf(g2)
 
 local <- g2 %>%
@@ -147,80 +114,20 @@ Freeway <- g2 %>%
 Freeway <- st_as_sf(Freeway)
 
 
-congested_bins <- c(0,1,3,5, 7, 10)
-
-congested_pal <- colorBin(
-  palette = "YlOrRd", na.color = "#808080",
-#  bins=congested_bins,
-  domain = g2$Total_Delay_Daily)
-
-
-
-cong_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  
-  addPolylines(data=local,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", local$RoadName , "<br>",
-                            "Total Delay: ", local$Total_Delay_Daily
-                            ),
-                 group="Local") %>%
-  addPolylines(data=TLHighway,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
-                            "Total Delay: ", TLHighway$Total_Delay_Daily
-                            ),
-              group="TLHighway") %>%
-  
-  addPolylines(data=MajorCollector,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
-                            "Total Delay: ", MajorCollector$Total_Delay_Daily
-                            ),
-             # size=MajorCollector$Total_Flow_Daily,
-              group="MajorCollector") %>%
-  addPolylines(data=Collector,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", Collector$RoadName , "<br>",
-                            "Total Delay: ", Collector$Total_Delay_Daily
-                            ),
-              group="Collector") %>%
-  addPolylines(data=MLHighway,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
-                            "Total Delay: ", MLHighway$Total_Delay_Daily
-                            ),
-              group="MLHighway") %>%
-  
-  addPolylines(data=Arterial,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
-                            "Total Delay: ", Arterial$Total_Delay_Daily
-                            ),
-              group="Arterial") %>%
-  addPolylines(data=MajorArterial,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
-                            "Total Delay: ", MajorArterial$Total_Delay_Daily
-                            ),
-              group="MajorArterial") %>%
-  addPolylines(data=Freeway,color=~congested_pal(Total_Delay_Daily),  
-              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
-                            "Total Delay: ", Freeway$Total_Delay_Daily
-                            ),
-              group="Freeway") %>%
-
-
-
-      addLegend("bottomright",
-            pal=congested_pal,
-            value=g2$Total_Delay_Daily,
-         #   group="Freeways AM",
-            title="Delay") %>%
-  
-  
-  addLayersControl(baseGroups = c("Local", "TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
-                   options = layersControlOptions(collapsed = TRUE))
-
-
-cong_map
 ```
 
 
+Highway Assignment Maps {data-icon="ion-android-globe"}
+=====================================  
 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+Congestion and Volume are important metrics in determining travel demand in a region. The maps here show the 2050 and 2016 base year congestion and total volume. 
+
+Congestion is shown as minutes for the 2050 Preferred Option and 2016 base year networks (only AB Congestion for now). 
+
+Total volume is shown as total daily volume by time of day. 
 
 
 Row {data-height=850}
@@ -228,7 +135,7 @@ Row {data-height=850}
 
 
 
-### Volume
+### Daily Volume
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -309,19 +216,116 @@ vol_map
 
 
 
+Row {data-height=850}
+-----------------------------------------------------------------------
+
+
+
 
 
 
 Volume to Capacity Ratio {data-icon="ion-car-outline"}
 =====================================  
 
+
+
+
 Inputs {.sidebar}
 -----------------------------------------------------------------------
 
 Volume-to-Capacity is a ratio measuring the demand against the supply of a highway link. 
 
+
+
+
+
+### Congested Time
+ 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+congested_bins <- c(0,1,3,5, 7, 10)
+
+congested_pal <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+#  bins=congested_bins,
+  domain = g2$Total_Delay_Daily)
+
+
+
+cong_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  
+  addPolylines(data=local,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", local$RoadName , "<br>",
+                            "Total Delay: ", local$Total_Delay_Daily
+                            ),
+                 group="Local") %>%
+  addPolylines(data=TLHighway,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "Total Delay: ", TLHighway$Total_Delay_Daily
+                            ),
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "Total Delay: ", MajorCollector$Total_Delay_Daily
+                            ),
+             # size=MajorCollector$Total_Flow_Daily,
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "Total Delay: ", Collector$Total_Delay_Daily
+                            ),
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "Total Delay: ", MLHighway$Total_Delay_Daily
+                            ),
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "Total Delay: ", Arterial$Total_Delay_Daily
+                            ),
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "Total Delay: ", MajorArterial$Total_Delay_Daily
+                            ),
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "Total Delay: ", Freeway$Total_Delay_Daily
+                            ),
+              group="Freeway") %>%
+
+
+
+      addLegend("bottomright",
+            pal=congested_pal,
+            value=g2$Total_Delay_Daily,
+         #   group="Freeways AM",
+            title="Delay") %>%
+  
+  
+  addLayersControl(baseGroups = c("Local", "TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+
+cong_map
+```
+
+
+
+
+
+
 Row
 -----------------------------------------------------------------------
+
 
 ### AM VOC
 
