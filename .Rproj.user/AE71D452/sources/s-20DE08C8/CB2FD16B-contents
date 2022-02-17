@@ -1,0 +1,1862 @@
+---
+title: "2020 Census Data TAZ Allocation TRMv6.2"
+author: "Jacob Ford DCHC MPO"
+date: "9/28/2021"
+output: html_document
+---
+
+*only durham and orange counties for parcels, everything else for centroids*
+
+
+## Overview
+
+This document describes the process for the 2020 decennial census data including population and household data to TRM G2 TAZs. 
+
+Previous attempts to allocate demographic data to the TAZ level typically involved using either an area coverage approach, where the proportion of the TAZ covering a census geographic unit was used to distribute the proportion of the demographic data; or the centroid of the census geographic unit was exported and rolled up to the TAZ level. In both scenarios, imprecise distribution occurs due to actual population density and distribution not matching with area coverage of arbitrary geographic units. This results in  downstream effects in trip generation, distribution, and overall model accuracy. 
+
+The process to prepare the population and household data for the TRM G2 utilizes parcel locations to accurately reflect the population distribution. Precise distribution of demographic data from the 2020 census improves the accuracy of TAZ level data.  
+
+
+## Process
+
+* First step was collecting the latest parcel data from county sources, including [Wake County](https://data.wakegov.com/datasets/Wake::parcels/about), [Orange County](https://www.orangecountync.gov/2057/Download-GIS-Data), [Durham County](https://live-durhamnc.opendata.arcgis.com/datasets/single-family-residential-parcels/explore) and [Alamance County](http://apps.alamance-nc.com/GISFTP/)
+  + Filtering for residential units and accounting for household units in each parcel
+  + Residential variables for respective counties: Durham, LANDUSE_DE; Wake, TYPE_USE_D; Orange, LBSCDESC; Alamance, XXDDC1.Further information on filtering techniques can be found in the R script used to create this document.  
+  + Most parcel layers from counties provided units to account for multi-family structures; for Durham County, units were not provided on the parcel layer. Using the 2020 county level households from the decennial census as a calibration total, units per parcel were approximated by first treating single and multi-family structures separately after filtering, then calculate units by parcel square footage. 
+* Export parcels to centroids
+* Overlay the 2020 census blocks over the parcel centroids, using the total units in each block, distribute the demographic data to each parcel centroid. 
+* Remove the census block layer, and overlay with the TAZ layer, rolling up the loaded parcel centroids to the TAZ level
+
+
+
+## Data Processed
+
+
+Data available from the 2020 census included population and housing information. For the TRM G2, the following data is collected:
+
+* Total Housing Units (*HUs*) Census Variable H0010002, represents all occupied households
+* Total Population (*TotalPop*) Census Variable P0010001
+* Total Housing Unit Population (*HH_Pop*) Census Variables (P0050001 - P0050007 - P0050002), represents population living in residential homes, Total Population minus non-institutional and Institutional group quarter populations 
+* Non-HH Population (*NonHH_Pop*) Census Variables (P0050007 + P0050002), total of institutional and non-household population including correctional facilities, students, military, nursing home, etc. 
+* College and University students in General Quarters housing  (*Stud_GQ*) Census Variable (P0050008)
+
+  
+  
+
+  
+  
+  
+## Example
+
+In the below snip, TAZs 1674 and 1673 are shown in dotted black lines. The thick red lines are the 2020 census blocks, which contain the demographic data. The black dots are the residential Wake parcels, exported as centroid points. 
+
+
+![](TAZ Example.png)
+
+
+The centroid of the highlighted census block is represented as the green triangle. Note the centroid is located in TAZ 1674. Hence under the census block centroid approach, all demographic data would be allocated to TAZ 1674. Had the area approach been utilized, since the majority of the area of the selected census block lies in TAZ 1674, the corresponding proportion of area covered would have been used to distribute the population of the census block. However, note how roughly half of parcel centroids in the highlighted census block are in TAZ 1674 and the other half reside in 1673. Therefore in reality, roughly half of the population of the highlighted census block resides in TAZ 1674 and the other half in 1673. 
+
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+library(knitr)
+Methods <- c("TJCOG Area", "Caliper Centroid", "Proposed Parcel Approach")
+
+example <- as.data.frame(Methods)
+
+example$Pop <- c(134, 191, 64)
+example$HUs <- c(61, 87, 29)
+
+
+knitr::kable(example, caption = "TAZ 1674 Distribution Via Different Methods")
+```
+
+The above table shows the resulting allocation for the different approaches, TJCOG's area based coverage, Caliper's census block centroid, and the parcel coverage approach. The latter accurately reflects real population density distribution, resulting in more accurate TAZ level demographic data.  
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+##Load Packages and TAZ, SE data
+library(caliperR)
+library(nngeo)
+library(tcadr)
+library(sf)
+library(leaflet)
+library(PL94171)
+library(janitor)
+library(dplyr)
+library(tidycensus)
+library(tidyverse)
+options(tigris_use_cache = TRUE)
+library(sf)
+library(data.table)
+library(dplyr)
+library(stringi)
+
+
+
+vars_2020 <- load_variables(2020,"pl",cache=TRUE)
+vars_2013 <- load_variables(2013,"acs5",cache=TRUE)
+##total pop = B01003_001 for 2013 and 2016
+
+
+vars_2016 <- load_variables(2016,"acs5",cache=TRUE)
+
+
+
+
+
+#Load TAZ
+
+#taz_g2 <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Archive/TRM_G2_TAZ_CaliperUpdated.shp")
+taz <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Archive/full taz.shp")
+model_boundary <- st_read('C:/Users/JacobFo/OneDrive - City of Durham/MTP Work/EJ/Recreated 11.19.21/model_boundary.shp')
+
+  # suppressWarnings(
+  #   model_boundary <- taz %>%
+  #     mutate(temp = 1) %>%
+  #     group_by(temp) %>%
+  #     summarize(count = n()) %>%
+  #     st_buffer(.0001)
+  # )
+  # counties <- unique(taz$COUNTY)
+  # 
+
+
+durham_tazs <- taz %>%
+  filter(COUNTY=="Durham")
+
+
+
+blocks_2020_HH <- get_decennial(
+ geography="block",
+ variables= "H1_002N", ## note represents all occupied HH's
+ state="NC",
+ year=2020,
+ geometry=TRUE,
+ county=unique(taz$COUNTY)
+)%>%
+  mutate(HH=value) 
+
+
+blocks_2020_Pop <- get_decennial(
+ geography="block",
+ variables= "P1_001N", 
+ state="NC",
+ year=2020,
+ geometry=TRUE,
+ county=unique(taz$COUNTY)
+)%>%
+  mutate(Pop=value) 
+
+blocks_2020_Stud_GQ <- get_decennial(
+ geography="block",
+ variables= "P5_008N", 
+ state="NC",
+ year=2020,
+ geometry=TRUE,
+ county=unique(taz$COUNTY)
+)%>%
+  mutate(StudGQ=value) 
+
+
+blocks_2020_NonInst <- get_decennial(
+ geography="block",
+ variables= "P5_007N", 
+ state="NC",
+ year=2020,
+ geometry=TRUE,
+ county=unique(taz$COUNTY)
+)%>%
+  mutate(NonInst_Pop=value) 
+
+blocks_2020_Inst <- get_decennial(
+ geography="block",
+ variables= "P5_002N", 
+ state="NC",
+ year=2020,
+ geometry=TRUE,
+ county=unique(taz$COUNTY)
+)%>%
+  mutate(Inst_Pop=value) 
+
+
+
+
+blocks_2020 <- cbind(blocks_2020_HH,blocks_2020_Pop,blocks_2020_Stud_GQ,blocks_2020_NonInst,blocks_2020_Inst) %>%
+  select(GEOID, NAME, HH, TotalPop=Pop, Stud_GQ=StudGQ, NonInst_Pop, Inst_Pop) %>%
+  separate(NAME, c("A","B", "C", "County"), sep = ',') %>%
+  select(-A, -B, -C)
+
+blocks_2020$HH_Pop <- blocks_2020$TotalPop - blocks_2020$NonInst_Pop - blocks_2020$Inst_Pop
+
+blocks_2020$NonHH_Pop <- blocks_2020$NonInst_Pop + blocks_2020$Inst_Pop
+
+
+model_boundary <- st_transform(model_boundary, st_crs(blocks_2020))
+blocks_2020 <- blocks_2020[st_intersects(blocks_2020, model_boundary, sparse = FALSE), ]
+
+durham_blocks <- blocks_2020 %>%
+  filter(County==' Durham County')
+
+
+person_blocks <- blocks_2020 %>%
+  filter(County==' Person County')
+
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+durham_tazs <- st_transform(durham_tazs, st_crs(durham_blocks)) %>%st_make_valid()
+```
+
+
+```{r}
+##Person County Stuff
+
+
+person_county_pop_2013 <- get_acs(
+  geography="block group",
+  variables='B01003_001',
+  state="NC",
+  county="Person",
+  year=2013,
+  geometry=TRUE,
+  ) %>% mutate(
+    Pop_2013=estimate
+  )
+
+person_county_pop_2016 <- get_acs(
+  geography="block group",
+  variables='B01003_001',
+  state="NC",
+  county="Person",
+  year=2016,
+  geometry=TRUE,
+  ) %>% mutate(
+    Pop_2016=estimate
+  )
+
+
+person_data <- cbind(person_county_pop_2013, person_county_pop_2016) %>%
+  select(GEOID, geometry, Pop_2013, Pop_2016)
+
+
+model_boundary <- st_transform(model_boundary, st_crs(blocks_2020))
+blocks_2020 <- blocks_2020[st_intersects(blocks_2020, model_boundary, sparse = FALSE), ]
+
+
+
+
+
+```
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#########################################################
+
+##Load Durham County Parcels, only selecting residential units
+##Export to Centroid, Tag to TAZ first to see which TAZs have no Parcel Units
+##For TAZ with zero parcels, use centroid of census block strategy
+##For TAZs with any parcels, allocate based on TotalUnits 
+
+#########################################################
+
+res_words <- c( "FAMILY", "FAM", "HOME", "CONDOMINIUM", "CONDO", "RES/ 2-MH OR MH SITES", "RESIDENTIAL", "TOWNHOUSE")
+
+apart_words <- c("APARTMENT", "HIGH RISE")
+  
+durham_parcels <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRM G2/Parcel Data/Counties/Durham/Parcels.shp") 
+
+durham_parcels <- subset(durham_parcels, select = -c(UNITS))
+
+
+
+temp <- durham_parcels %>%
+  mutate(
+    res_flag=case_when(
+      grepl(res_words, LANDUSE_DE) ~ 1,
+        ),
+    apart_flag = case_when(
+      grepl(apart_words, LANDUSE_DE) ~ 1,
+      ),
+    Units = case_when(
+      res_flag == 1 ~ 1,
+      apart_flag == 1 ~ SUM_ACRE*16.855)) 
+
+temp <- temp %>%
+  filter(apart_flag==1 | res_flag==1)
+
+durham_parcel_centroids <- temp %>%
+  st_point_on_surface()
+
+
+
+durham_blocks <- st_transform(durham_blocks, st_crs(durham_parcel_centroids)) %>%st_make_valid()
+
+
+parcels_on_blocks <- durham_parcel_centroids %>%
+  st_join(durham_blocks %>% select(GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)) %>%
+  select(PARCEL_ID, Units, GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)
+
+
+blocks_with_parcels <- parcels_on_blocks %>%
+  st_drop_geometry %>%
+  group_by(GEOID) %>%
+  summarise(TotalUnits = sum(Units, na.rm=T))
+
+
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+temp <- left_join(durham_blocks, blocks_with_parcels, by="GEOID")
+
+temp$ParcelTag <- ifelse(temp$TotalUnits== 0 | is.na(temp$TotalUnits), 0, 1)
+
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+blocks_with_units <- temp %>%
+  filter((ParcelTag==1))
+
+
+durham_parcel_centroids <- st_transform(durham_parcel_centroids, st_crs(durham_tazs)) %>%st_make_valid()
+
+
+tag_taz_on_parcels <- durham_parcel_centroids %>%
+  st_join(durham_tazs %>% select(ID)) %>%
+  select(PARCEL_ID, ID, Units, geometry)
+
+taz_tag <- tag_taz_on_parcels[!(is.na(tag_taz_on_parcels$ID)), ] %>%
+  select(PARCEL_ID, ID, Units,geometry)
+
+no_taz_tag <- tag_taz_on_parcels[is.na(tag_taz_on_parcels$ID), ] 
+
+no_taz_tag <- st_transform(no_taz_tag, st_crs(durham_tazs)) %>%
+  st_make_valid() 
+
+no_taz_tag <- no_taz_tag %>%
+  st_join(durham_tazs %>% select(ID),st_nn, k = 1, maxdist = 200) %>%
+  rename(ID=ID.y) %>%
+  select(PARCEL_ID, ID, Units,geometry)
+
+
+
+
+parcel_centroids_cleaned <- rbind(taz_tag, no_taz_tag)
+
+
+parcel_centroids_cleaned <- st_transform(parcel_centroids_cleaned, st_crs(blocks_with_units)) %>%st_make_valid()
+
+
+
+overlay_parcels <- parcel_centroids_cleaned %>%
+  st_join(blocks_with_units) %>%
+  select(PARCEL_ID, Units, ID, TotalUnits, GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)
+
+
+
+add_total_units <- overlay_parcels %>%
+  st_drop_geometry()%>%
+  group_by(GEOID) %>%
+  summarise(TotalUnits = sum(Units, na.rm=T))
+
+
+
+
+
+##Add new pop/hh calculation
+overlay_parcels$NewTotalPop <- ifelse(overlay_parcels$Units==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$TotalPop, 
+                      overlay_parcels$Units/overlay_parcels$TotalUnits*overlay_parcels$TotalPop
+                      
+                                        
+                                       
+)
+
+
+overlay_parcels$NewHH_Pop <- ifelse(overlay_parcels$Units==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$HH_Pop, 
+                      overlay_parcels$Units/overlay_parcels$TotalUnits*overlay_parcels$HH_Pop
+                      
+                                        
+                                       
+)
+
+overlay_parcels$NewNonHH_Pop <- ifelse(overlay_parcels$Units==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$NonHH_Pop, 
+                      overlay_parcels$Units/overlay_parcels$TotalUnits*overlay_parcels$NonHH_Pop
+                      
+                                        
+                                       
+)
+
+
+overlay_parcels$NewHH <- ifelse(overlay_parcels$Units==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$HH, 
+                      overlay_parcels$Units/overlay_parcels$TotalUnits*overlay_parcels$HH
+                      
+                                        
+                                       
+)
+
+overlay_parcels$NewStudGQ <- ifelse(overlay_parcels$Units==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$Stud_GQ, 
+                      overlay_parcels$Units/overlay_parcels$TotalUnits*overlay_parcels$Stud_GQ
+                      
+                                        
+                                       
+)
+
+parcel_to_taz <- overlay_parcels %>%
+  st_drop_geometry() %>%
+  group_by(ID) %>%
+  summarise(TotalPop=sum(NewTotalPop, na.rm=T),
+            HH_Pop=sum(NewHH_Pop, na.rm=T),
+            HH=sum(NewHH, na.rm=T),
+            NonHH_Pop=sum(NewNonHH_Pop, na.rm=T),
+            Stud_GQ=sum(NewStudGQ, na.rm=T))
+
+parcel_to_taz$tag <- 1
+
+
+```
+
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+blocks_without_units <- temp %>%
+  filter((ParcelTag==0))
+
+blocks_without_units <- st_transform(blocks_without_units, st_crs(durham_tazs)) %>%st_make_valid()
+
+
+temp <- blocks_without_units %>%
+  st_point_on_surface() %>%
+  ##Use nearest neighbor to get points to fit into TAZ geography, small differences causes a few changes
+  st_join(durham_tazs %>% select(ID),st_nn, k = 1, maxdist = 500)
+
+ sum(is.na(temp$ID))
+
+block_to_taz <- temp %>%
+  st_drop_geometry()%>%
+  group_by(ID) %>%
+    summarise(TotalPop=sum(TotalPop, na.rm=T),
+            HH_Pop=sum(HH_Pop, na.rm=T),
+            HH=sum(HH, na.rm=T),
+            NonHH_Pop=sum(NonHH_Pop, na.rm=T),
+            Stud_GQ=sum(Stud_GQ, na.rm=T))
+
+block_to_taz$tag <- 0
+
+```
+
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+final_durham_taz <- rbind(block_to_taz,parcel_to_taz, by="ID" )
+
+final_durham_taz$TotalPop <- ifelse(is.na(final_durham_taz$TotalPop),0, as.double(final_durham_taz$TotalPop))
+final_durham_taz$HH_Pop <- ifelse(is.na(final_durham_taz$HH_Pop),0, as.double(final_durham_taz$HH_Pop))
+final_durham_taz$Stud_GQ <- ifelse(is.na(final_durham_taz$Stud_GQ),0, as.double(final_durham_taz$Stud_GQ))
+final_durham_taz$HH <- ifelse(is.na(final_durham_taz$HH),0, as.double(final_durham_taz$HH))
+final_durham_taz$NonHH_Pop <- ifelse(is.na(final_durham_taz$NonHH_Pop),0, as.double(final_durham_taz$NonHH_Pop))
+final_durham_taz$ID <- as.integer(final_durham_taz$ID)
+final_durham_taz$tag <- as.integer(final_durham_taz$tag)
+
+
+final_durham_taz <- final_durham_taz %>%
+  group_by(ID) %>%
+      summarise(TotalPop=sum(TotalPop, na.rm=T),
+            HH_Pop=sum(HH_Pop, na.rm=T),
+            HH=sum(HH, na.rm=T),
+            NonHH_Pop=sum(NonHH_Pop, na.rm=T),
+            Stud_GQ=sum(Stud_GQ, na.rm=T),
+            tag=sum(tag, na.rm=T))
+
+final_durham_taz <- final_durham_taz[order(final_durham_taz$ID),]
+
+final_durham_taz <- final_durham_taz[!(is.na(final_durham_taz$ID)),]
+
+
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+#########################################################
+
+
+### Orange
+
+
+#########################################################
+
+
+library(tcadr)
+library(foreign)
+
+
+### Join and filter for Residential Parcels
+
+orange_blocks <- blocks_2020 %>%
+  filter(County==" Orange County")
+
+orange_tazs <- taz %>%
+  filter(COUNTY=="Orange")
+
+
+orange_parcels <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRM G2/Parcel Data/Counties/Orange/parview2017.shp")%>%
+  select(PIN, SIZE, geometry)
+
+orange_addr <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/TRM G2/Parcel Data/Counties/Orange/addresses.shp")%>%
+  select(PIN, LBCSDESC, LBCSCODE, geometry)
+
+orange_unit_info <- read.dbf("C:/Users/JacobFo/OneDrive - City of Durham/TRM G2/Parcel Data/Counties/Orange/buildinginfo.dbf") %>%
+  filter(!is.na(PIN) & NUMOFUNITS > 0)
+
+joined <- orange_parcels %>%
+  st_join(orange_addr, by=c("PIN")%>% select(LBCSDESC, LBCSCODE)) %>%
+  rename(PIN=PIN.x) %>%
+  st_drop_geometry() %>%
+  left_join(orange_unit_info, by=c("PIN"))
+
+de_duped <- distinct(joined, PIN, .keep_all=TRUE)
+
+add_geo <- left_join(orange_parcels, de_duped, by="PIN")
+
+de_duped <- distinct(add_geo, PIN, .keep_all=TRUE)
+
+orange_data <- de_duped %>%
+  select(PIN, NUMOFUNITS, LBCSDESC, LBCSCODE, geometry) %>%
+  filter(NUMOFUNITS > 0)
+
+
+res_words <- c("|Res-MH-DW-TW|Res-RV|Res-Single Family|Single Room Occupancy Unit|Res-Townhouse|Res-Single Apartment|Res-MH-SW|Res-Duplex|Mobile Home Temp")
+
+orange_data$res_flag <- ifelse(grepl(res_words, orange_data$LBCSDESC), 1, 0)
+
+
+
+#### Tag each parcel to TAZ
+
+orange_data <- st_transform(orange_data, st_crs(orange_tazs)) %>%st_make_valid()
+
+parcels_tagged_taz <- orange_data %>%
+  st_point_on_surface() %>%
+  st_join(orange_tazs %>% select(ID)) %>%
+  filter(!is.na(LBCSDESC))
+
+
+taz_tag <- parcels_tagged_taz %>% 
+  filter(!is.na(ID))
+
+no_taz_tag <- parcels_tagged_taz %>% 
+  filter(is.na(ID)) %>%
+  rename(oldTAZ = ID) %>%
+  st_join(orange_tazs %>% select(ID),st_nn, k = 1, maxdist = 1000)
+
+no_taz_tag <- no_taz_tag %>%
+  select(-c(oldTAZ))
+
+all_parcels_tagged <- rbind(taz_tag,no_taz_tag)
+
+
+
+orange_blocks <- st_transform(orange_blocks, st_crs(all_parcels_tagged)) %>%st_make_valid()
+
+
+parcels_on_blocks <- parcels_tagged_taz %>%
+  st_join(orange_blocks %>% select(GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)) %>%
+  select(PIN, NUMOFUNITS, GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)
+
+
+
+blocks_with_parcels <- parcels_on_blocks %>%
+  st_drop_geometry %>%
+  group_by(GEOID) %>%
+  summarise(TotalUnits = sum(NUMOFUNITS, na.rm=T))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+
+##tag TAZ
+
+
+orange_blocks <- st_transform(orange_blocks, st_crs(orange_tazs)) %>%st_make_valid()
+
+
+temp <- orange_blocks %>%
+  st_point_on_surface() %>%
+  st_join(orange_tazs %>% select(ID, COUNTY)) %>%
+  st_drop_geometry() %>%
+  filter(!(is.na(COUNTY))) %>%
+  select(GEOID, TotalPop, HH_Pop, HH, NonHH_Pop, Stud_GQ, ID, County)
+
+
+
+
+parcels_on_blocks <- all_parcels_tagged %>%
+  st_join(orange_blocks %>% select(GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)) %>%
+  select(PIN, NUMOFUNITS, GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)
+  
+
+blocks_with_parcels <- parcels_on_blocks %>%
+  st_drop_geometry %>%
+  group_by(GEOID) %>%
+  summarise(TotalUnits = sum(NUMOFUNITS, na.rm=T))
+
+
+
+
+temp <- left_join(orange_blocks, blocks_with_parcels, by="GEOID")
+
+temp$ParcelTag <- ifelse(temp$TotalUnits== 0 | is.na(temp$TotalUnits), 0, 1)
+
+
+  
+
+
+```
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+blocks_with_units <- temp %>%
+  filter((ParcelTag==1))
+
+blocks_without_units<- temp %>%
+  filter((ParcelTag==0))
+
+
+
+
+parcel_centroids_cleaned <- st_transform(all_parcels_tagged, st_crs(blocks_with_units)) %>%st_make_valid()
+
+
+overlay_parcels <- all_parcels_tagged %>%
+  st_join(blocks_with_units) %>%
+  select(PIN, NUMOFUNITS, ID, TotalUnits, GEOID, TotalPop, HH_Pop, NonHH_Pop, Stud_GQ, HH)
+
+
+
+add_total_units <- overlay_parcels %>%
+  st_drop_geometry()%>%
+  group_by(GEOID) %>%
+  summarise(TotalUnits = sum(NUMOFUNITS, na.rm=T))
+
+
+
+
+
+##Add new pop/hh calculation
+overlay_parcels$NewTotalPop <- ifelse(overlay_parcels$NUMOFUNITS==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$TotalPop, 
+                      overlay_parcels$NUMOFUNITS/overlay_parcels$TotalUnits*overlay_parcels$TotalPop
+                      
+                                        
+                                       
+)
+
+
+overlay_parcels$NewHH_Pop <- ifelse(overlay_parcels$NUMOFUNITS==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$HH_Pop, 
+                      overlay_parcels$NUMOFUNITS/overlay_parcels$TotalUnits*overlay_parcels$HH_Pop
+                      
+                                        
+                                       
+)
+
+overlay_parcels$NewNonHH_Pop <- ifelse(overlay_parcels$NUMOFUNITS==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$NonHH_Pop, 
+                      overlay_parcels$NUMOFUNITS/overlay_parcels$TotalUnits*overlay_parcels$NonHH_Pop
+                      
+                                        
+                                       
+)
+
+
+overlay_parcels$NewHH <- ifelse(overlay_parcels$NUMOFUNITS==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$HH, 
+                      overlay_parcels$NUMOFUNITS/overlay_parcels$TotalUnits*overlay_parcels$HH
+                      
+                                        
+                                       
+)
+
+overlay_parcels$NewStudGQ <- ifelse(overlay_parcels$NUMOFUNITS==1, 
+                      (1/overlay_parcels$TotalUnits)*overlay_parcels$Stud_GQ, 
+                      overlay_parcels$NUMOFUNITS/overlay_parcels$TotalUnits*overlay_parcels$Stud_GQ
+                      
+                                        
+                                       
+)
+
+parcel_to_taz <- overlay_parcels %>%
+  st_drop_geometry() %>%
+  group_by(ID) %>%
+  summarise(TotalPop=sum(NewTotalPop, na.rm=T),
+            HH_Pop=sum(NewHH_Pop, na.rm=T),
+            HH=sum(NewHH, na.rm=T),
+            NonHH_Pop=sum(NewNonHH_Pop, na.rm=T),
+            Stud_GQ=sum(NewStudGQ, na.rm=T))
+parcel_to_taz$tag <- 1
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+blocks_without_units <- st_transform(blocks_without_units, st_crs(orange_tazs)) %>%st_make_valid()
+
+
+temp <- blocks_without_units %>%
+  st_point_on_surface() %>%
+  st_join(orange_tazs %>% select(ID),st_nn, k = 1, maxdist = 200) 
+
+block_to_taz <- temp %>%
+  st_drop_geometry()%>%
+  group_by(ID) %>%
+    summarise(TotalPop=sum(TotalPop, na.rm=T),
+            HH_Pop=sum(HH_Pop, na.rm=T),
+            HH=sum(HH, na.rm=T),
+            NonHH_Pop=sum(NonHH_Pop, na.rm=T),
+            Stud_GQ=sum(Stud_GQ, na.rm=T))
+
+block_to_taz$tag <- 0
+
+
+
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+##combine
+final_orange_taz <- rbind(block_to_taz,parcel_to_taz, by="ID" )
+
+final_orange_taz$TotalPop <- ifelse(is.na(final_orange_taz$TotalPop),0, as.double(final_orange_taz$TotalPop))
+final_orange_taz$HH_Pop <- ifelse(is.na(final_orange_taz$HH_Pop),0, as.double(final_orange_taz$HH_Pop))
+final_orange_taz$Stud_GQ <- ifelse(is.na(final_orange_taz$Stud_GQ),0, as.double(final_orange_taz$Stud_GQ))
+final_orange_taz$HH <- ifelse(is.na(final_orange_taz$HH),0, as.double(final_orange_taz$HH))
+final_orange_taz$NonHH_Pop <- ifelse(is.na(final_orange_taz$NonHH_Pop),0, as.double(final_orange_taz$NonHH_Pop))
+final_orange_taz$ID <- as.integer(final_orange_taz$ID)
+final_orange_taz$tag <- as.integer(final_orange_taz$tag)
+
+
+final_orange_taz <- final_orange_taz %>%
+  group_by(ID) %>%
+      summarise(TotalPop=sum(TotalPop, na.rm=T),
+            HH_Pop=sum(HH_Pop, na.rm=T),
+            HH=sum(HH, na.rm=T),
+            NonHH_Pop=sum(NonHH_Pop, na.rm=T),
+            Stud_GQ=sum(Stud_GQ, na.rm=T),
+            tag=sum(tag, na.rm=T))
+
+final_orange_taz <- final_orange_taz[order(final_orange_taz$ID),]
+
+final_orange_taz <- final_orange_taz[!(is.na(final_orange_taz$ID)),]
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+Other counties include Johnston, Chatham, Harnett, Granville,  Person, Franklin, and Nash. No parcel data were included for these counties. 
+
+```{r message=FALSE, warning=TRUE, include=FALSE}
+
+
+#########################################################
+
+
+### All other counties 
+
+
+#########################################################
+
+other_fips <- c(001, 101, 037, 085, 077, 145,  069, 127, 183)
+
+other_counties <- c("Alamance", "Johnston", "Chatham","Harnett", "Granville", "Person", "Franklin", "Nash", "Wake")
+
+# wake_tazs <- taz %>%
+#   filter(COUNTY == "Wake")
+# 
+# wake_blocks <- prep_2020 %>%
+#   filter(county=="183")
+# 
+# wake_blocks <- st_transform(wake_blocks, st_crs(wake_tazs)) %>% st_make_valid()
+# 
+# temp <- wake_blocks %>%
+#   st_point_on_surface() %>%
+#  # st_join(wake_tazs %>% select(ID),st_nn, k = 1, maxdist = 500) %>%
+#   st_join(wake_tazs %>% select(ID)) %>%
+#   st_drop_geometry %>%
+#   select(GEOID, TotalPop, HH_Pop, HH, NonHH_Pop, Stud_GQ, ID, COUNTY)
+# 
+# 
+# blocks_to_taz <- temp %>%
+#   group_by(ID, COUNTY) %>%
+#   summarise(TotalPop=sum(TotalPop, na.rm=T),
+#             HH_Pop=sum(HH_Pop, na.rm=T),
+#             HH=sum(HH, na.rm=T),
+#             NonHH_Pop=sum(NonHH_Pop, na.rm=T),
+#             Stud_GQ=sum(Stud_GQ, na.rm=T))
+
+
+
+other_blocks <- blocks_2020 %>%
+  filter(County !=" Durham County" & County !=" Orange County" )
+
+other_tazs <- taz %>%
+  filter(COUNTY %in% other_counties)
+
+
+other_blocks <- st_transform(other_blocks, st_crs(other_tazs)) %>%st_make_valid()
+
+
+temp <- other_blocks %>%
+  st_point_on_surface() %>%
+  st_join(other_tazs %>% select(ID, COUNTY)) %>%
+ # st_join(other_tazs %>% select(ID, COUNTY),st_nn, k = 1, maxdist = 200) 
+  st_drop_geometry() %>%
+  select(GEOID, TotalPop, HH_Pop, HH, NonHH_Pop, Stud_GQ, ID, COUNTY)
+
+summary(temp$ID)
+  
+blocks_to_taz <- temp %>%
+  group_by(ID, COUNTY) %>%
+  summarise(TotalPop=sum(TotalPop, na.rm=T),
+            HH_Pop=sum(HH_Pop, na.rm=T),
+            HH=sum(HH, na.rm=T),
+            NonHH_Pop=sum(NonHH_Pop, na.rm=T),
+            Stud_GQ=sum(Stud_GQ, na.rm=T))
+
+blocks_to_taz$tag <- 0
+  
+
+
+
+
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(tibble)
+
+new_col <- "Durham"
+
+durham <- final_durham_taz
+
+durham$ID <- as.double(durham$ID)
+
+durham <- add_column(durham, new_col, .after = 1)
+durham <- durham %>%
+  rename(COUNTY = new_col)
+
+
+
+
+
+orange<-final_orange_taz
+
+new_col <- "Orange"
+
+orange$ID <- as.double(orange$ID)
+
+orange <- add_column(orange, new_col, .after = 1)
+orange <- orange %>%
+  rename(COUNTY = new_col)
+
+
+
+final_census_taz <- rbind(durham,  orange, by="ID")
+
+blocks_to_taz$ID <- as.double(blocks_to_taz$ID)
+
+final_census_taz <- rbind(final_census_taz,  blocks_to_taz, by="ID")
+
+
+
+
+
+final_census_taz <- final_census_taz[order(final_census_taz$COUNTY),]
+
+final_census_taz <- final_census_taz[!(is.na(final_census_taz$ID)),]
+
+
+```
+
+Often parcel data after filtering for unit and residential data did not cover each census block in the county. In those instances, the centroid of the census block was rolled up to the TAZ. For Johnston, Chatham, Harnett, Granville,  Person, Franklin, and Nash counties, the census block method was used, hence no parcel data were collected for these counties. The map below shows TAZs in the model region where parcels were used to allocate census data. Note the regions where non-residential households are not found (RTP, Duke and UNC, Medical facilities, etc). 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+add_geo <- taz %>%
+  select(ID, geometry)
+
+
+
+final_census_taz$ID <- as.double(final_census_taz$ID)
+
+final <- left_join(final_census_taz, add_geo, by="ID")
+
+final$tag <- as.integer(final$tag)
+
+final <- st_as_sf(final)
+
+pal <- colorFactor("YlOrRd", final$tag)
+
+
+leaflet(final) %>%
+    addProviderTiles("CartoDB.Positron") %>%
+    addPolygons(data=final,
+                      fillColor = ~pal(tag),
+                      popup=paste("ID: ", final$ID, "<br>",
+                                  "Parcel Used in TAZ Tag: ", final$tag), fillOpacity=0.7,
+                      stroke=FALSE) %>%
+      addLegend("bottomright",
+            pal=pal,
+            value=final$tag,
+          #  label="2020 HH",
+            title="Parcels used in TAZ")
+  
+```
+
+
+
+
+
+### Summary Table
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(janitor)
+
+add_mpo <- taz %>%
+  select(ID, MPO_ID)
+
+#add_mpo$ID <- as.integer(add_mpo$ID)
+#final_census_taz$ID<-as.integer(final_census_taz$ID)
+final_census_taz$HH<-as.double(final_census_taz$HH)
+final_census_taz$Stud_GQ<-as.double(final_census_taz$Stud_GQ)
+final_census_taz$TotalPop<-as.double(final_census_taz$TotalPop)
+final_census_taz$ID <- as.double(final_census_taz$ID)
+
+Final_2020Census_TAZ <- left_join(final_census_taz, add_mpo, by="ID")
+
+summary_by_county <- Final_2020Census_TAZ %>%
+  filter(COUNTY != "ID") %>%
+  group_by(COUNTY) %>%
+  summarise('Total Population'=sum(TotalPop),
+            'Total Households' = sum(HH),
+            'Total Student GQ' = sum(Stud_GQ)) %>%
+  adorn_totals("row")
+
+
+
+
+knitr::kable(summary_by_county, caption = "Final 2020 Data by County",format.args = list(big.mark = ",",
+  scientific = FALSE))
+
+
+
+```
+
+
+```{r}
+##final for Jenna 9.28.21
+
+final_tjcog <- Final_2020Census_TAZ %>%
+  st_drop_geometry()
+```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p
+
+final <- Final_2020Census_TAZ %>%
+  select(ID, COUNTY, TotalPop, HH, HH_Pop, NonHH_Pop, Stud_GQ, tag) %>%
+  filter(ID != "NA")
+
+final<- final[order(final$ID),]
+
+kable((final), "html",caption = "Final 2020 Data by TAZ") %>%
+    kable_styling() %>%
+    scroll_box(width = "100%", height = "400px")
+```
+
+
+
+
+
+
+
+
+
+
+
+##QC
+
+
+
+Three levels of QCs by each TAZ:
+
+1. HH = 0 & HH_Pop > 0
+- HH=HHpop/HHsize by county
+
+2. HH > 0 and HH_Pop = 0
+- HHpop=2 (Durham TAZ)
+
+3. HH_Pop > HH*5 
+- HH=HHpop/HHsize by county
+HHPop> HH*5, Then HH=HHpop/HHsize by county
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+
+get_avg_hh_sizes <- final_census_taz %>%
+  group_by(COUNTY) %>%
+  filter(COUNTY !="ID") %>%
+  mutate(Avg_HHSize = case_when(
+    HH > 0 ~ HH_Pop/HH
+  )) %>%
+  summarize(Avg_HH_Size =mean(Avg_HHSize, na.rm=T)) 
+
+final_census_taz$Avg_HH_Size <- NA
+
+for (i in 1:length(final_census_taz$ID))
+{
+  
+  final_census_taz$Avg_HH_Size[i] <- sum(get_avg_hh_sizes$Avg_HH_Size[get_avg_hh_sizes$COUNTY==final_census_taz$COUNTY[i]])
+  
+}
+
+
+
+
+post_qc_checks <- final_census_taz %>%
+  filter(COUNTY !="ID") %>%
+  mutate(
+    HH_qc = case_when(
+      HH == 0 & HH_Pop > 0 ~ HH_Pop/Avg_HH_Size,
+      TRUE ~ HH_qc==HH),
+    HH_Pop_qc = case_when(
+      HH > 0 & HH_Pop==0 ~ HH_Pop==2,
+      TRUE~ HH_Pop))
+    
+    
+final_census_taz$HH_QC <- ifelse(
+  (final_census_taz$HH == 0 & final_census_taz$HH_Pop > 0), final_census_taz$HH_Pop/final_census_taz$Avg_HH_Size, final_census_taz$HH
+)
+
+final_census_taz$HH_Pop_QC <- ifelse(
+  final_census_taz$HH > 0 & final_census_taz$HH_Pop == 0, 2, final_census_taz$HH_Pop
+)
+
+final_census_taz$HH_QC <- ifelse(
+  final_census_taz$HH_Pop_QC > 5* final_census_taz$HH_Pop_QC, final_census_taz$HH_Pop/final_census_taz$Avg_HH_Size, final_census_taz$HH_QC
+)
+
+ex <- final_census_taz %>%
+ # st_drop_geometry() %>%
+  group_by(COUNTY) %>%
+  filter(COUNTY !="ID") %>%
+  summarise(HH=sum(HH_QC),
+            hh=sum(HH))
+
+ex
+
+
+
+temp <- final_census_taz %>%
+  filter(HH == 0 & HH_Pop > 0)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Regressions
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+ 
+  
+library(readxl)
+tjcog <- read_excel("C:/Users/JacobFo/Downloads/Updated_2020_Pop_HHs_GQ_TRM_TAZs.xlsx")
+
+
+
+```
+
+### Total TRM Region
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+##compare Total
+library(ggpmisc)
+library(plotly)
+
+Total <- final_census_taz %>%
+  #filter(COUNTY=="Wake") %>%
+  select(ID, TotalPop, HH)
+
+Total$ID <- as.integer(Total$ID)
+Total$TotalPop <- as.double(Total$TotalPop)
+Total$HH <- as.double(Total$HH)
+
+Total_tjcog <- tjcog %>%
+  filter(COUNTY=="Wake") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Total_tjcog$ID <- as.integer(Total_tjcog$ID)
+
+
+Total_tjcog <-left_join(Total,Total_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Total_tjcog, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("TRM G2 Region Total Housing Units") +labs(y= "TJCOG HUs", x = "Parcel Hus")
+
+
+p <- ggplot(Total_tjcog, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("TRM G2 Region Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+
+```
+
+
+
+
+
+### DCHC MPO
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ ##compare DCHC
+ library(ggpmisc)
+ library(plotly)
+
+
+
+ DCHC <- Final_2020Census_TAZ %>%
+  filter(MPO_ID==2) %>%
+   select(ID, TotalPop, HH, COUNTY)
+ 
+ DCHC$ID <- as.integer(DCHC$ID)
+ DCHC$TotalPop <- as.double(DCHC$TotalPop)
+ DCHC$HH <- as.double(DCHC$HH)
+ 
+ Total_tjcog <- tjcog %>%
+   filter(tjcog$MPO=="DCHC") %>%
+   rename(ID = TAZ,
+          TotalPop_TJCOG = Pop_Total,
+          HH_TJCOG=DU_Occupied) %>%
+   select(ID, TotalPop_TJCOG, HH_TJCOG, MPO)
+ 
+ Total_tjcog$ID <- as.integer(Total_tjcog$ID)
+ 
+ 
+ Total_tjcog <-left_join(DCHC,Total_tjcog, by="ID")
+ 
+ 
+ 
+ 
+ my.formula <- y ~ x
+ 
+ p <- ggplot(Total_tjcog, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+    geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                 parse = TRUE) +         
+    geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+ p + ggtitle("DCHC MPO Total Housing Units") +labs(y= "TJCOG HUs", x = "Parcel HUs")
+ 
+ 
+ p <- ggplot(Total_tjcog, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+    geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                 parse = TRUE) +         
+    geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+ p + ggtitle("DCHC MPO Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+ 
+
+
+### CAMPO MPO
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ ##compare DCHC
+ library(ggpmisc)
+ library(plotly)
+
+
+
+ CAMPO <- Final_2020Census_TAZ %>%
+  filter(MPO_ID==1) %>%
+   select(ID, TotalPop, HH, COUNTY)
+ 
+ CAMPO$ID <- as.integer(CAMPO$ID)
+ CAMPO$TotalPop <- as.double(CAMPO$TotalPop)
+ CAMPO$HH <- as.double(CAMPO$HH)
+
+ Total_tjcog <- tjcog %>%
+   filter(tjcog$MPO=="CAMPO") %>%
+   rename(ID = TAZ,
+          TotalPop_TJCOG = Pop_Total,
+          HH_TJCOG=DU_Occupied) %>%
+   select(ID, TotalPop_TJCOG, HH_TJCOG, MPO)
+ 
+ Total_tjcog$ID <- as.integer(Total_tjcog$ID)
+ 
+ 
+ Total_tjcog <-left_join(CAMPO,Total_tjcog, by="ID")
+ 
+ 
+ 
+ 
+ my.formula <- y ~ x
+ 
+ p <- ggplot(Total_tjcog, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+    geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                 parse = TRUE) +         
+    geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+ p + ggtitle("CAMPO MPO Total Housing Units") +labs(y= "TJCOG HUs", x = "Parcel HUs")
+ 
+ 
+ p <- ggplot(Total_tjcog, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+    geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                 parse = TRUE) +         
+    geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+ p + ggtitle("CAMPO MPO Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+ 
+
+
+
+### Wake
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+##compare Wake
+ library(ggpmisc)
+ library(plotly)
+
+
+
+ wake <- final_census_taz %>%
+  filter(COUNTY =="Wake") %>%
+   select(ID, TotalPop, HH, COUNTY)
+ 
+ wake$ID <- as.integer(wake$ID)
+ wake$TotalPop <- as.double(wake$TotalPop)
+ wake$HH <- as.double(wake$HH)
+ 
+ Total_tjcog <- tjcog %>%
+   filter(COUNTY =="Wake") %>%
+   rename(ID = TAZ,
+          TotalPop_TJCOG = Pop_Total,
+          HH_TJCOG=DU_Occupied) %>%
+   select(ID, TotalPop_TJCOG, HH_TJCOG, MPO)
+ 
+ Total_tjcog$ID <- as.integer(Total_tjcog$ID)
+ 
+ 
+ Total_tjcog <-left_join(wake,Total_tjcog, by="ID")
+ 
+ 
+ 
+ 
+ my.formula <- y ~ x
+ 
+ p <- ggplot(Total_tjcog, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+    geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                 parse = TRUE) +         
+    geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+ p + ggtitle("Wake Total Housing Units") +labs(y= "TJCOG HUs", x = "Parcel HUs")
+ 
+ 
+ p <- ggplot(Total_tjcog, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+    geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                 parse = TRUE) +         
+    geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+ p + ggtitle("Wake Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+### Durham
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+##compare Durham
+library(ggpmisc)
+library(plotly)
+
+durham <- final_census_taz %>%
+  filter(COUNTY=="Durham") %>%
+  select(ID, TotalPop, HH)
+
+durham$ID <- as.integer(durham$ID)
+durham$TotalPop <- as.double(durham$TotalPop)
+durham$HH <- as.double(durham$HH)
+
+durham_tjcog <- tjcog %>%
+  filter(COUNTY=="Durham") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+durham_tjcog$ID <- as.integer(durham_tjcog$ID)
+
+
+durham_compare <-left_join(durham,durham_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(durham_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 800)+xlim(0, 800)
+p + ggtitle("Durham County Total Housing Units") +labs(y= "TJCOG HUs", x = "Parcel HUs")
+
+
+p <- ggplot(durham_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3000)+xlim(0, 3000)
+p + ggtitle("Durham County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+
+
+### Orange
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+##compare Orange
+library(ggpmisc)
+library(plotly)
+
+Orange <- final_census_taz %>%
+  filter(COUNTY=="Orange") %>%
+  select(ID, TotalPop, HH)
+
+Orange$ID <- as.integer(Orange$ID)
+Orange$TotalPop <- as.double(Orange$TotalPop)
+Orange$HH <- as.double(Orange$HH)
+
+Orange_tjcog <- tjcog %>%
+  filter(COUNTY=="Orange") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Orange_tjcog$ID <- as.integer(Orange_tjcog$ID)
+
+
+Orange_compare <-left_join(Orange,Orange_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Orange_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 800)+xlim(0,800)
+p + ggtitle("Orange County Total Housing Units") +labs(y= "TJCOG HUs", x = "Parcel HUs")
+
+
+p <- ggplot(Orange_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 2000)+xlim(0, 2000)
+p + ggtitle("Orange County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+### Chatham
+##compare Chatham
+library(ggpmisc)
+library(plotly)
+
+Chatham <- final_census_taz %>%
+  filter(COUNTY=="Chatham") %>%
+  select(ID, TotalPop, HH)
+
+Chatham$ID <- as.integer(Chatham$ID)
+Chatham$TotalPop <- as.double(Chatham$TotalPop)
+Chatham$HH <- as.double(Chatham$HH)
+
+Chatham_tjcog <- tjcog %>%
+  filter(COUNTY=="Chatham") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Chatham_tjcog$ID <- as.integer(Chatham_tjcog$ID)
+
+
+Chatham_compare <-left_join(Chatham,Chatham_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Chatham_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Chatham County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Chatham_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Chatham County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+### Johnston
+##compare Johnston
+library(ggpmisc)
+library(plotly)
+
+Johnston <- final_census_taz %>%
+  filter(COUNTY=="Johnston") %>%
+  select(ID, TotalPop, HH)
+
+Johnston$ID <- as.integer(Johnston$ID)
+Johnston$TotalPop <- as.double(Johnston$TotalPop)
+Johnston$HH <- as.double(Johnston$HH)
+
+Johnston_tjcog <- tjcog %>%
+  filter(COUNTY=="Johnston") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Johnston_tjcog$ID <- as.integer(Johnston_tjcog$ID)
+
+
+Johnston_compare <-left_join(Johnston,Johnston_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Johnston_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Johnston County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Johnston_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Johnston County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+
+
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+### Harnett
+##compare Harnett
+library(ggpmisc)
+library(plotly)
+
+Harnett <- final_census_taz %>%
+  filter(COUNTY=="Harnett") %>%
+  select(ID, TotalPop, HH)
+
+Harnett$ID <- as.integer(Harnett$ID)
+Harnett$TotalPop <- as.double(Harnett$TotalPop)
+Harnett$HH <- as.double(Harnett$HH)
+
+Harnett_tjcog <- tjcog %>%
+  filter(COUNTY=="Harnett") %>%
+  rename(ID_old = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID_old, TotalPop_TJCOG, HH_TJCOG)
+
+
+##Add missing row, mislabeled in TJCOG
+Harnett_tjcog <- Harnett_tjcog %>%
+  add_row(ID_old=885, TotalPop_TJCOG=tjcog$Pop_Total[tjcog$TAZ==885],HH_TJCOG=tjcog$DU_Occupied[tjcog$TAZ==885] )
+
+Harnett_tjcog$ID <- (Harnett$ID)
+
+
+Harnett_compare <-left_join(Harnett,Harnett_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Harnett_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Harnett County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Harnett_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Harnett County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+### Granville
+##compare Granville
+library(ggpmisc)
+library(plotly)
+
+Granville <- final_census_taz %>%
+  filter(COUNTY=="Granville") %>%
+  select(ID, TotalPop, HH)
+
+Granville$ID <- as.integer(Granville$ID)
+Granville$TotalPop <- as.double(Granville$TotalPop)
+Granville$HH <- as.double(Granville$HH)
+
+Granville_tjcog <- tjcog %>%
+  filter(COUNTY=="Granville") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Granville_tjcog$ID <- as.integer(Granville_tjcog$ID)
+
+
+Granville_compare <-left_join(Granville,Granville_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Granville_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Granville County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Granville_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Granville County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+##compare Person
+### Person
+library(ggpmisc)
+library(plotly)
+
+Person <- final_census_taz %>%
+  filter(COUNTY=="Person") %>%
+  select(ID, TotalPop, HH)
+
+Person$ID <- as.integer(Person$ID)
+Person$TotalPop <- as.double(Person$TotalPop)
+Person$HH <- as.double(Person$HH)
+
+
+Person_tjcog <- tjcog %>%
+  filter(COUNTY=="Person") %>%
+  rename(ID_old = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID_old, TotalPop_TJCOG, HH_TJCOG)
+
+
+Person_tjcog$ID <- (Person$ID)
+
+
+Person_compare <-left_join(Person,Person_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Person_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Person County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Person_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Person County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+##compare Franklin
+
+### Franklin
+library(ggpmisc)
+library(plotly)
+
+Franklin <- final_census_taz %>%
+  filter(COUNTY=="Franklin") %>%
+  select(ID, TotalPop, HH)
+
+Franklin$ID <- as.integer(Franklin$ID)
+Franklin$TotalPop <- as.double(Franklin$TotalPop)
+Franklin$HH <- as.double(Franklin$HH)
+
+Franklin_tjcog <- tjcog %>%
+  filter(COUNTY=="Franklin") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Franklin_tjcog$ID <- as.integer(Franklin_tjcog$ID)
+
+
+Franklin_compare <-left_join(Franklin,Franklin_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Franklin_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Franklin County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Franklin_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Franklin County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```
+
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+### Nash
+##compare Nash
+library(ggpmisc)
+library(plotly)
+
+Nash <- final_census_taz %>%
+  filter(COUNTY=="Nash") %>%
+  select(ID, TotalPop, HH)
+
+Nash$ID <- as.integer(Nash$ID)
+Nash$TotalPop <- as.double(Nash$TotalPop)
+Nash$HH <- as.double(Nash$HH)
+
+Nash_tjcog <- tjcog %>%
+  filter(COUNTY=="Nash") %>%
+  rename(ID = TAZ,
+         TotalPop_TJCOG = Pop_Total,
+         HH_TJCOG=DU_Occupied) %>%
+  select(ID, TotalPop_TJCOG, HH_TJCOG)
+
+Nash_tjcog$ID <- as.integer(Nash_tjcog$ID)
+
+
+Nash_compare <-left_join(Nash,Nash_tjcog, by="ID")
+
+
+
+
+my.formula <- y ~ x
+
+p <- ggplot(Nash_compare, aes(x = HH, y = HH_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 1000)+xlim(0, 1000)
+p + ggtitle("Nash County Total Housing Units") +labs(y= "TJCOG HHs", x = "Parcel HHs")
+
+
+p <- ggplot(Nash_compare, aes(x = TotalPop, y = TotalPop_TJCOG), xlabs("Parcel Calculation")) +
+   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +         
+   geom_point()+  geom_abline(intercept = 0, slope = 1, color="red", size=1)+  ylim(0, 3500)+xlim(0, 3500)
+p + ggtitle("Nash County Total Population") +labs(y= "TJCOG TotalPop", x = "Parcel TotalPop")
+```

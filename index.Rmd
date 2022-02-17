@@ -705,7 +705,7 @@ cong_map
 
 
 
-Graphs {data-icon="ion-stats-bars"}
+Summary Stats {data-icon="ion-stats-bars"}
 =====================================  
 
 
@@ -727,7 +727,8 @@ temp2 <- g2 %>%
   arrange(County) %>%
   mutate(Output= "Total Flow")
 
-temp <- g2 %>%  st_drop_geometry()
+temp <- g2 %>%  
+  st_drop_geometry()%>%
   group_by(County) %>%
   filter(DailyCount > 0) %>%
   filter(County != "") %>% ##filters empty space for tagged links with no counties 
