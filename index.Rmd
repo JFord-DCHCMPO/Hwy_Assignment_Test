@@ -152,7 +152,9 @@ Row
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 
-volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flow_Daily)
+bins = c(0,500,2500,5000,10000,25000,50000,125000)
+
+volume_pal <- colorBin(palette="GnOrRd", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
 
 
 vol_map <- leaflet()%>%
@@ -213,17 +215,19 @@ vol_map <- leaflet()%>%
       addLegend("bottomright",
             pal=volume_pal,
             value=g2$Total_Flow_Daily,
-         #   group="Freeways AM",
+        #  group="Freeways",
             title="Volume") %>%
+  
+
   
   
 
   
-  addLayersControl(baseGroups = c("Local", "TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+  addLayersControl(overlayGroups = c("Local", "TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
                    options = layersControlOptions(collapsed = TRUE))
 
 
-vol_map 
+vol_map %>% hideGroup("Local") %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
 ```
 
 
@@ -409,8 +413,6 @@ vol_map
 
 Volume to Capacity Ratio {.storyboard data-icon="ion-car-outline"}
 =====================================  
-
-
 
 
 
