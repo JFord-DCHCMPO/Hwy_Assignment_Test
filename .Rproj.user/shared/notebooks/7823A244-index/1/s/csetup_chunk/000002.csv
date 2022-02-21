@@ -34,8 +34,6 @@ Overwritten PROJ_LIB was C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/proj
 "
 "0","library(sp)"
 "0","library(ggplot2)"
-"2","Use suppressPackageStartupMessages() to eliminate package startup messages
-"
 "0","library(tcadr)"
 "2","Registered S3 method overwritten by 'data.table':
   method           from
@@ -183,9 +181,6 @@ Please use a list of either functions or lambdas:
 "1","Reading layer `"
 "1","Hwy Line"
 "1","' from data source "
-"1","
-"
-"1","  "
 "1","`"
 "1","C:\Users\JacobFo\OneDrive - City of Durham\Full Model Runs\Original TRMv6.2_2016 - Copy\Input\Highway\Hwy Line.shp"
 "1","' "

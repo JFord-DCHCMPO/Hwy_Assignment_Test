@@ -1,0 +1,72 @@
+---
+title: "Triangle Regional Model Highway Metrics"
+output: 
+  flexdashboard::flex_dashboard:
+     storyboard: true
+     theme:
+       version: 5
+
+    
+---
+
+
+
+Highway Assignment Maps {.storyboard data-icon="ion-android-globe"}
+=========================================
+
+
+Column {data-width=600}
+-------------------------------------
+    
+### Totla Flow
+    
+```{r}
+library(leaflet)
+leaflet() %>%
+  addTiles()
+```
+   
+Column {data-width=400}
+-------------------------------------
+   
+### AM Flow
+
+```{r}
+leaflet() %>%
+  addTiles()
+```   
+ 
+### PM Flow
+    
+```{r}
+leaflet() %>%
+  addTiles()
+```
+
+
+### Frame 2 {data-commentary-width=100}
+
+***
+asdfj;askdjf;sa 
+
+```{r}
+
+```
+
+
+
+VMT + VHT {.storyboard data-icon="ion-android-globe"}
+=========================================
+
+
+
+Congestion and VOC {.storyboard data-icon="ion-android-globe"}
+=========================================
+
+
+
+Details
+=========================================
+
+Column
+-----------------------------------------
