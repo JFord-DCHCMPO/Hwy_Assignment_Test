@@ -398,10 +398,8 @@ vol_map %>% hideGroup("Local") %>%hideGroup("TLHighway") %>%hideGroup("MajorColl
 
 
 
-Volume to Capacity Ratio {.storyboard data-icon="ion-car-outline"}
+Capacity & Congestion {.storyboard data-icon=""fa-solid fa-traffic-light"}
 =====================================  
-
-
 
 ### Congested Time
  
@@ -709,12 +707,6 @@ ggplotly(p)
 
 ### County Totals Outputs
 
-To do:
-
-- Add following:
-
-by HH, by HH_Pop
-on MPO and County level
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -811,7 +803,7 @@ ggplotly(p)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-temp <- merge(demo_data, vmt_flip) %>%
+temp <- merge(demo_data, vht_flip) %>%
   mutate('VHT/Person' = temp/Population,
          'VHT/HH' = temp/Households, 
          'VHT/Emp' = temp/Employment) %>%
