@@ -685,21 +685,54 @@ demo_data <- se_2020 %>%
   summarize(
     Population = sum(HH_POP, na.rm=T),
     Households = sum(HH, na.rm=T),
-    Employment = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T)
+    K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
       )
 
+temp <- melt(demo_data)
 
-p <- ggplot(data=demo_data, aes(x=reorder(County, -Population), y=Population)) +geom_bar(stat='identity') + theme_classic() + xlab('')+ ggtitle("Total Population 2020")+ theme(axis.text.x=element_text(angle = -45, hjust = 0)) + scale_y_continuous(labels=comma)
 
-ggplotly(p) 
 
-p <- ggplot(data=demo_data, aes(x=reorder(County, -Households), y=Households)) +geom_bar(stat='identity') + theme_classic() + xlab('')+ ggtitle("Total Households 2020")+ theme(axis.text.x=element_text(angle = -45, hjust = 0)) + scale_y_continuous(labels=comma)
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
 
-ggplotly(p) 
+ggplotly(p)
 
-p <- ggplot(data=demo_data, aes(x=reorder(County, -Employment), y=Employment)) +geom_bar(stat='identity') + theme_classic() + xlab('')+ ggtitle("Total Employment 2020")+ theme(axis.text.x=element_text(angle = -45, hjust = 0)) + scale_y_continuous(labels=comma)
 
-ggplotly(p) 
+
+
+
+```
+
+
+
+
+### Employment
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+demo_data <- se_2020 %>%
+  group_by(County) %>%
+  summarize(
+    'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    'Industry' = sum(Industry, na.rm=T),
+    'Office' = sum(Office, na.rm=T),
+    'Service Rate Low'= sum(Service_RateLow, na.rm=T),
+    'Service Rate High' = sum(Service_RateHigh, na.rm=T),
+    Retail = sum(Retail, na.rm=T)
+      )
+
+temp <- melt(demo_data)
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+
+ggplotly(p)
+
+
+
 
 
 ```
