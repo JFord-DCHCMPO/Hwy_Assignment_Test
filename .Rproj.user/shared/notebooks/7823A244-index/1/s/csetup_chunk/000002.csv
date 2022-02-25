@@ -1,0 +1,132 @@
+"0","library(flexdashboard)"
+"2","package ‘flexdashboard’ was built under R version 4.0.5"
+"0","library(xlsx)"
+"0","library(readxl)"
+"0","library(sf)"
+"2","package ‘sf’ was built under R version 4.0.5"
+"2","Linking to GEOS 3.9.1, GDAL 3.2.1, PROJ 7.2.1
+"
+"0","library(leaflet)"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"0","library(rgdal)"
+"2","package ‘rgdal’ was built under R version 4.0.5"
+"2","Loading required package: sp
+"
+"2","Please note that rgdal will be retired by the end of 2023,
+plan transition to sf/stars/terra functions using GDAL and PROJ
+at your earliest convenience.
+
+rgdal: version: 1.5-27, (SVN revision 1148)
+Geospatial Data Abstraction Library extensions to R successfully loaded
+Loaded GDAL runtime: GDAL 3.2.1, released 2020/12/29
+Path to GDAL shared files: C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/gdal
+GDAL binary built with GEOS: TRUE 
+Loaded PROJ runtime: Rel. 7.2.1, January 1st, 2021, [PJ_VERSION: 721]
+Path to PROJ shared files: C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/proj
+PROJ CDN enabled: FALSE
+Linking to sp version:1.4-5
+To mute warnings of possible GDAL/OSR exportToProj4() degradation,
+use options(""rgdal_show_exportToProj4_warnings""=""none"") before loading sp or rgdal.
+Overwritten PROJ_LIB was C:/Users/JacobFo/Documents/R/win-library/4.0/rgdal/proj
+"
+"0","library(sp)"
+"0","library(ggplot2)"
+"0","library(tcadr)"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"0","library(caliperR)"
+"2","Loading required package: RDCOMClient
+"
+"0","library(tcadr)"
+"0","library(janitor)"
+"2","
+Attaching package: ‘janitor’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    chisq.test, fisher.test
+
+"
+"0","library(data.table)"
+"2","data.table 1.13.6 using 8 threads (see ?getDTthreads).  Latest news: r-datatable.com
+"
+"0","library(dplyr)"
+"2","package ‘dplyr’ was built under R version 4.0.5"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(ggpmisc)"
+"2","package ‘ggpmisc’ was built under R version 4.0.5"
+"2","Loading required package: ggpp
+"
+"2","package ‘ggpp’ was built under R version 4.0.5"
+"2","
+Attaching package: ‘ggpp’
+
+"
+"2","The following object is masked from ‘package:ggplot2’:
+
+    annotate
+
+"
+"0","library(plotly)"
+"2","
+Attaching package: ‘plotly’
+
+"
+"2","The following object is masked from ‘package:ggplot2’:
+
+    last_plot
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"2","The following object is masked from ‘package:graphics’:
+
+    layout
+
+"
+"0","library(data.table)"
+"0","library(knitr)"
+"2","package ‘knitr’ was built under R version 4.0.5"
+"0","temp <-  read_tcad(""C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.bin"") %>%"
+"0","  filter(Total_Flow_Daily > 0) %>%"
+"0","  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily, ClusterName)"
+"2","`tbl_df()` was deprecated in dplyr 1.0.0.
+Please use `tibble::as_tibble()` instead."
+"2","`funs()` was deprecated in dplyr 0.8.0.
+Please use a list of either functions or lambdas: 
+
+  # Simple named list: 
+  list(mean = mean, median = median)
+
+  # Auto named with `tibble::lst()`: 
+  tibble::lst(mean, median)
+
+  # Using lambdas
+  list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))"

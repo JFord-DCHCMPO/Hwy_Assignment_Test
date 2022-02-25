@@ -10,19 +10,19 @@
     "source_on_save": false,
     "relative_order": 1,
     "properties": {
-        "cursorPosition": "914,0",
-        "scrollLine": "733",
-        "last_setup_crc32": "",
+        "cursorPosition": "1115,64",
+        "scrollLine": "1077",
+        "last_setup_crc32": "CD27A96F6a58e46f",
         "docOutlineVisible": "1",
         "Source": "Source",
         "docOutlineSize": "146"
     },
     "folds": "",
-    "lastKnownWriteTime": 1645818176,
+    "lastKnownWriteTime": 1645819502,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1645818176275,
+    "last_content_update": 1645819502274,
     "read_only": false,
     "read_only_alternatives": []
 }

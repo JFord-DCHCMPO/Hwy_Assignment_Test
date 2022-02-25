@@ -1105,12 +1105,17 @@ ggplotly(p)
 Overview {.storyboard data-icon="ion-stats-bars"}
 =====================================  
 
+```{r}
+getwd()
+```
 
 
 
 Placeholder page for defining acronyms - VMT, VHT, VOC
 
-Map of clusters in TRMG2, etc
+TRMG2 classifies sub-areas as clusters in the following design: 
+
+TRMG2  Cluster Map: ![](ClusterMap.png) 
 
 
 
