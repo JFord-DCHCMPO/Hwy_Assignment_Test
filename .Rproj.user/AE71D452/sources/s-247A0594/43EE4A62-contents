@@ -36,8 +36,7 @@ library(knitr)
 
 temp <-  read_tcad("C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.bin") %>%
   filter(Total_Flow_Daily > 0) %>%
-  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,
-         Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily)
+  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily, ClusterName)
 
 g2_geo <-  st_read("C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.shp")
 
@@ -827,7 +826,7 @@ ggplotly(p)
 
 
 
-### Total VMT
+### VMT
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -850,7 +849,7 @@ ggplotly(p)
 
 
 
-### Total VHT
+### VHT
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -882,6 +881,41 @@ Cluster Statistics {.storyboard data-icon="ion-stats-bars"}
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(scales)
+
+flow_flip <- g2 %>%
+  st_drop_geometry() %>%
+  group_by(ClusterName) %>%
+  filter(DailyCount > 0) %>%
+  filter(ClusterName != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
+  arrange(ClusterName) %>%
+  mutate(Output= "Total Flow")
+
+vmt_flip <- g2 %>%  
+  st_drop_geometry()%>%
+  group_by(ClusterName) %>%
+  filter(DailyCount > 0) %>%
+  filter(ClusterName != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
+  arrange(ClusterName)%>%
+  mutate(Output= "VMT")
+
+vht_flip <- g2 %>%  
+  st_drop_geometry()%>%
+  group_by(ClusterName) %>%
+  filter(DailyCount > 0) %>%
+  filter(ClusterName != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
+  arrange(ClusterName)%>%
+  mutate(Output= "VHT")
+
+
+joined <- rbind(flow_flip, vmt_flip, vht_flip)
+
+
 
 cluster_data <- se_2020 %>%
   group_by(ClusterName) %>%
@@ -941,6 +975,51 @@ ggplotly(p)
 
 
 ### Model Outputs
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+flow_flip <- g2 %>%
+  st_drop_geometry() %>%
+  group_by(ClusterName) %>%
+  filter(DailyCount > 0) %>%
+  filter(ClusterName != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
+  arrange(ClusterName) %>%
+  mutate(Output= "Total Flow")
+
+vmt_flip <- g2 %>%  
+  st_drop_geometry()%>%
+  group_by(ClusterName) %>%
+  filter(DailyCount > 0) %>%
+  filter(ClusterName != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
+  arrange(ClusterName)%>%
+  mutate(Output= "VMT")
+
+vht_flip <- g2 %>%  
+  st_drop_geometry()%>%
+  group_by(ClusterName) %>%
+  filter(DailyCount > 0) %>%
+  filter(ClusterName != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
+  arrange(ClusterName)%>%
+  mutate(Output= "VHT")
+
+
+joined <- rbind(flow_flip, vmt_flip, vht_flip)
+
+
+
+
+p <- ggplot(data=joined, aes(x=reorder(ClusterName, -temp), y=temp, fill = Output)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Cluster Level Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+
+```
 
 
 
@@ -1023,12 +1102,15 @@ ggplotly(p)
 
 
 
+Overview {.storyboard data-icon="ion-stats-bars"}
+=====================================  
 
 
 
 
+Placeholder page for defining acronyms - VMT, VHT, VOC
 
-
+Map of clusters in TRMG2, etc
 
 
 
