@@ -1102,20 +1102,23 @@ ggplotly(p)
 
 
 
-Overview {.storyboard data-icon="ion-stats-bars"}
+Overview {.storyboard}
 =====================================  
 
-```{r}
-getwd()
-```
+**Acronyms**
+
+1. VMT: Vehicle Miles Traveled
+
+2. VHT: Vehicle Hours Traveled
+
+3. VOC: Volume-over-Capacity ratio
+
+4. Clusters: TRMG2 classifies sub-areas into clusters, refer to map below: 
 
 
+TRMG2  Cluster Map: 
 
-Placeholder page for defining acronyms - VMT, VHT, VOC
-
-TRMG2 classifies sub-areas as clusters in the following design: 
-
-TRMG2  Cluster Map: ![](ClusterMap.png) 
+![](ClusterMap.png) 
 
 
 
