@@ -1064,13 +1064,13 @@ temp <- merge(cluster_data, vmt_flip) %>%
   mutate('VMT/Person' = temp/Population,
          'VMT/HH' = temp/Households, 
          'VMT/Emp' = temp/Employment) %>%
-  select(County, 'VMT/Person', 'VMT/HH','VMT/Emp')
+  select(ClusterName, 'VMT/Person', 'VMT/HH','VMT/Emp')
 
 temp <- melt(temp)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Cluster Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
@@ -1087,13 +1087,13 @@ temp <- merge(cluster_data, vht_flip) %>%
   mutate('VHT/Person' = temp/Population,
          'VHT/HH' = temp/Households, 
          'VHT/Emp' = temp/Employment) %>%
-  select(County, 'VHT/Person', 'VHT/HH','VHT/Emp')
+  select(ClusterName, 'VHT/Person', 'VHT/HH','VHT/Emp')
 
 temp <- melt(temp)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma) + labs(fill = "")
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Cluster Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma) + labs(fill = "")
 
 ggplotly(p) 
 
