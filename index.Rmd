@@ -673,7 +673,7 @@ Here is some commentary on graph 3
 
 
 
-Summary Stats {.storyboard data-icon="ion-stats-bars"}
+County Statistics {.storyboard data-icon="ion-stats-bars"}
 =====================================  
 
 
@@ -683,7 +683,7 @@ Summary Stats {.storyboard data-icon="ion-stats-bars"}
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(scales)
 
-demo_data <- se_2020 %>%
+county_data <- se_2020 %>%
   group_by(County) %>%
   summarize(
     Population = sum(HH_POP, na.rm=T),
@@ -693,40 +693,11 @@ demo_data <- se_2020 %>%
     'College On-Campus' = sum(CollegeOff, na.rm=T)
       )
 
-temp <- melt(demo_data)
+temp <- melt(county_data)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
-
-ggplotly(p)
-
-
-
-
-
-```
-
-
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(scales)
-
-demo_data <- se_2020 %>%
-  group_by(ClusterName) %>%
-  summarize(
-    Population = sum(HH_POP, na.rm=T),
-    Households = sum(HH, na.rm=T),
-    K12 = sum(K12, na.rm=T),
-    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
-    'College On-Campus' = sum(CollegeOff, na.rm=T)
-      )
-
-temp <- melt(demo_data)
-
-
-
-p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic Cluster Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p)
 
@@ -735,6 +706,9 @@ ggplotly(p)
 
 
 ```
+
+
+
 
 
 ### Employment
@@ -742,7 +716,7 @@ ggplotly(p)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(scales)
 
-demo_data <- se_2020 %>%
+county_data <- se_2020 %>%
   group_by(County) %>%
   summarize(
     'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
@@ -753,11 +727,11 @@ demo_data <- se_2020 %>%
     Retail = sum(Retail, na.rm=T)
       )
 
-temp <- melt(demo_data)
+temp <- melt(county_data)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p)
 
@@ -768,34 +742,10 @@ ggplotly(p)
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(scales)
-
-demo_data <- se_2020 %>%
-  group_by(ClusterName) %>%
-  summarize(
-    'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
-    'Industry' = sum(Industry, na.rm=T),
-    'Office' = sum(Office, na.rm=T),
-    'Service Rate Low'= sum(Service_RateLow, na.rm=T),
-    'Service Rate High' = sum(Service_RateHigh, na.rm=T),
-    Retail = sum(Retail, na.rm=T)
-      )
-
-temp <- melt(demo_data)
 
 
 
-p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment Cluster Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
-
-ggplotly(p)
-
-
-```
-
-
-
-### County Totals Outputs
+### Model Outputs
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -836,7 +786,7 @@ joined <- rbind(flow_flip, vmt_flip, vht_flip)
 
 
 
-p <- ggplot(data=joined, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=joined, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
@@ -844,11 +794,11 @@ ggplotly(p)
 ```
 
 
-### Total Trips
+### Trips
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-demo_data <- se_2020 %>%
+county_data <- se_2020 %>%
   group_by(County) %>%
   summarize(
     Population = sum(HH_POP, na.rm=T),
@@ -859,7 +809,7 @@ demo_data <- se_2020 %>%
     'College On-Campus' = sum(CollegeOff, na.rm=T)
       )
 
-temp <- merge(demo_data, flow_flip) %>%
+temp <- merge(county_data, flow_flip) %>%
   mutate('Trips/Person' = temp/Population,
          'Trips/HH' = temp/Households, 
          'Trips/Emp' = temp/Employment) %>%
@@ -869,7 +819,7 @@ temp <- melt(temp)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
@@ -881,7 +831,7 @@ ggplotly(p)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-temp <- merge(demo_data, vmt_flip) %>%
+temp <- merge(county_data, vmt_flip) %>%
   mutate('VMT/Person' = temp/Population,
          'VMT/HH' = temp/Households, 
          'VMT/Emp' = temp/Employment) %>%
@@ -891,7 +841,7 @@ temp <- melt(temp)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
@@ -904,7 +854,7 @@ ggplotly(p)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-temp <- merge(demo_data, vht_flip) %>%
+temp <- merge(county_data, vht_flip) %>%
   mutate('VHT/Person' = temp/Population,
          'VHT/HH' = temp/Households, 
          'VHT/Emp' = temp/Employment) %>%
@@ -914,11 +864,173 @@ temp <- melt(temp)
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
 ```
+
+
+
+
+Cluster Statistics {.storyboard data-icon="ion-stats-bars"}
+=====================================  
+
+
+
+### Demographics
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+cluster_data <- se_2020 %>%
+  group_by(ClusterName) %>%
+  summarize(
+    Population = sum(HH_POP, na.rm=T),
+    Households = sum(HH, na.rm=T),
+    K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
+
+temp <- melt(cluster_data)
+
+
+
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic Cluster Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p)
+
+
+
+
+
+```
+
+
+
+
+### Employment
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+cluster_data <- se_2020 %>%
+  group_by(ClusterName) %>%
+  summarize(
+    'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    'Industry' = sum(Industry, na.rm=T),
+    'Office' = sum(Office, na.rm=T),
+    'Service Rate Low'= sum(Service_RateLow, na.rm=T),
+    'Service Rate High' = sum(Service_RateHigh, na.rm=T),
+    Retail = sum(Retail, na.rm=T)
+      )
+
+temp <- melt(cluster_data)
+
+
+
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment Cluster Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p)
+
+
+```
+
+
+
+### Model Outputs
+
+
+
+### Trips
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+cluster_data <- se_2020 %>%
+  group_by(ClusterName) %>%
+  summarize(
+    Population = sum(HH_POP, na.rm=T),
+    'Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    Households = sum(HH, na.rm=T),
+    K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
+
+temp <- merge(cluster_data, flow_flip) %>%
+  mutate('Trips/Person' = temp/Population,
+         'Trips/HH' = temp/Households, 
+         'Trips/Emp' = temp/Employment) %>%
+  select(ClusterName, 'Trips/Person', 'Trips/HH','Trips/Emp')
+
+temp <- melt(temp)
+
+
+
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Cluster Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+```
+
+
+
+### VMT
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+temp <- merge(cluster_data, vmt_flip) %>%
+  mutate('VMT/Person' = temp/Population,
+         'VMT/HH' = temp/Households, 
+         'VMT/Emp' = temp/Employment) %>%
+  select(County, 'VMT/Person', 'VMT/HH','VMT/Emp')
+
+temp <- melt(temp)
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+```
+
+
+
+
+### VHT
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+temp <- merge(cluster_data, vht_flip) %>%
+  mutate('VHT/Person' = temp/Population,
+         'VHT/HH' = temp/Households, 
+         'VHT/Emp' = temp/Employment) %>%
+  select(County, 'VHT/Person', 'VHT/HH','VHT/Emp')
+
+temp <- melt(temp)
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma) + labs(fill = "")
+
+ggplotly(p) 
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
