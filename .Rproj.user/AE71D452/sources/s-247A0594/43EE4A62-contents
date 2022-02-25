@@ -55,7 +55,7 @@ g2$County <- tolower(g2$County)
 temp <- read_tcad("C:/Users/JacobFo/TRMG2_v0.2/master/sedata/se_2020.bin") %>%
   filter(Type !="External")
 
-get_counties <-read_tcad("C:/Users/JacobFo/TRMG2_v0.2/master/tazs/master_tazs.bin") %>% select(TAZ = ID,  County) 
+get_counties <-read_tcad("C:/Users/JacobFo/TRMG2_v0.2/master/tazs/master_tazs.bin") %>% select(TAZ = ID,  County, ClusterName) 
 
 se_2020 <- merge(temp, get_counties)
 
@@ -218,6 +218,9 @@ vol_map <- leaflet()%>%
 vol_map %>% hideGroup("Local") %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
 ```
 
+***
+
+The TRMG2 2016 base year highway assignment files by time of day (just AM and PM in Beta version) are presented here. Click the layers button to select HCMType for more focused viewing. 
 
 
 
@@ -706,6 +709,33 @@ ggplotly(p)
 
 
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+demo_data <- se_2020 %>%
+  group_by(ClusterName) %>%
+  summarize(
+    Population = sum(HH_POP, na.rm=T),
+    Households = sum(HH, na.rm=T),
+    K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
+
+temp <- melt(demo_data)
+
+
+
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic Cluster Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+
+ggplotly(p)
+
+
+
+
+
+```
+
 
 ### Employment
 
@@ -736,6 +766,33 @@ ggplotly(p)
 
 
 ```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+demo_data <- se_2020 %>%
+  group_by(ClusterName) %>%
+  summarize(
+    'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    'Industry' = sum(Industry, na.rm=T),
+    'Office' = sum(Office, na.rm=T),
+    'Service Rate Low'= sum(Service_RateLow, na.rm=T),
+    'Service Rate High' = sum(Service_RateHigh, na.rm=T),
+    Retail = sum(Retail, na.rm=T)
+      )
+
+temp <- melt(demo_data)
+
+
+
+p <- ggplot(data=temp, aes(x=ClusterName, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment Cluster Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+
+ggplotly(p)
+
+
+```
+
 
 
 ### County Totals Outputs
@@ -790,6 +847,17 @@ ggplotly(p)
 ### Total Trips
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+demo_data <- se_2020 %>%
+  group_by(County) %>%
+  summarize(
+    Population = sum(HH_POP, na.rm=T),
+    'Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    Households = sum(HH, na.rm=T),
+    K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
 
 temp <- merge(demo_data, flow_flip) %>%
   mutate('Trips/Person' = temp/Population,
