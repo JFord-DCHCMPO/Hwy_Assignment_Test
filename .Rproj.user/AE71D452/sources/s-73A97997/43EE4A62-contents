@@ -141,7 +141,9 @@ Highway Assignment Maps {.storyboard data-icon="ion-android-globe"}
 
 bins = c(0,500,2500,5000,10000,50000,125000)
 
-volume_pal <- colorBin(palette='GrYlRd', domain=g2$Total_Flow_Daily, bins = bins)
+
+volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
+
 
 
 vol_map <- leaflet()%>%
@@ -151,51 +153,51 @@ vol_map <- leaflet()%>%
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total Flow: ", local$Total_Flow_Daily
                             ),
-              weight = log(local$Total_Flow_Daily), 
+              weight = log(local$Total_Flow_Daily)/5, 
               group="Local") %>%
   addPolylines(data=TLHighway,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
                             "Total Flow: ", TLHighway$Total_Flow_Daily
                             ),
-              weight = log(TLHighway$Total_Flow_Daily), 
+              weight = log(TLHighway$Total_Flow_Daily)/5, 
               group="TLHighway") %>%
   
   addPolylines(data=MajorCollector,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
                             "Total Flow: ", MajorCollector$Total_Flow_Daily
                             ),
-              weight = log(MajorCollector$Total_Flow_Daily), 
+              weight = log(MajorCollector$Total_Flow_Daily)/5, 
               group="MajorCollector") %>%
   addPolylines(data=Collector,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", Collector$RoadName , "<br>",
                             "Total Flow: ", Collector$Total_Flow_Daily
                             ),
-              weight = log(Collector$Total_Flow_Daily), 
+              weight = log(Collector$Total_Flow_Daily)/5, 
               group="Collector") %>%
   addPolylines(data=MLHighway,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
                             "Total Flow: ", MLHighway$Total_Flow_Daily
                             ),
-              weight = log(MLHighway$Total_Flow_Daily), 
+              weight = log(MLHighway$Total_Flow_Daily)/4, 
               group="MLHighway") %>%
   
   addPolylines(data=Arterial,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", Arterial$RoadName , "<br>",
                             "Total Flow: ", Arterial$Total_Flow_Daily
                             ),
-              weight = log(Arterial$Total_Flow_Daily), 
+              weight = log(Arterial$Total_Flow_Daily)/4, 
               group="Arterial") %>%
   addPolylines(data=MajorArterial,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
                             "Total Flow: ", MajorArterial$Total_Flow_Daily
                             ),
-              weight = log(MajorArterial$Total_Flow_Daily), 
+              weight = log(MajorArterial$Total_Flow_Daily)/4, 
               group="MajorArterial") %>%
   addPolylines(data=Freeway,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", Freeway$RoadName , "<br>",
                             "Total Flow: ", Freeway$Total_Flow_Daily
                             ),
-              weight = log(Freeway$Total_Flow_Daily), 
+              weight = log(Freeway$Total_Flow_Daily)/3, 
               group="Freeway") %>%
 
 
@@ -230,7 +232,8 @@ The TRMG2 2016 base year highway assignment files by time of day (just AM and PM
 
 bins = c(0,500,2500,5000,10000,50000,125000)
 
-volume_pal <- colorBin(palette='viridis', domain=g2$Total_Flow_Daily, bins = bins)
+
+volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
 
 
 vol_map <- leaflet()%>%
@@ -240,51 +243,51 @@ vol_map <- leaflet()%>%
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total PM Flow: ", local$Tot_Flow_PM
                             ),
-              weight = log(local$Tot_Flow_PM), 
+              weight = log(local$Tot_Flow_PM)/5, 
               group="Local") %>%
   addPolylines(data=TLHighway,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
                             "Total PM Flow: ", TLHighway$Tot_Flow_PM
                             ),
-              weight = log(TLHighway$Tot_Flow_PM), 
+              weight = log(TLHighway$Tot_Flow_PM)/5, 
               group="TLHighway") %>%
   
   addPolylines(data=MajorCollector,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
                             "Total PM Flow: ", MajorCollector$Tot_Flow_PM
                             ),
-              weight = log(MajorCollector$Tot_Flow_PM), 
+              weight = log(MajorCollector$Tot_Flow_PM)/5, 
               group="MajorCollector") %>%
   addPolylines(data=Collector,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", Collector$RoadName , "<br>",
                             "Total PM Flow: ", Collector$Tot_Flow_PM
                             ),
-              weight = log(Collector$Tot_Flow_PM), 
+              weight = log(Collector$Tot_Flow_PM)/5, 
               group="Collector") %>%
   addPolylines(data=MLHighway,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
                             "Total PM Flow: ", MLHighway$Tot_Flow_PM
                             ),
-              weight = log(MLHighway$Tot_Flow_PM), 
+              weight = log(MLHighway$Tot_Flow_PM)/4, 
               group="MLHighway") %>%
   
   addPolylines(data=Arterial,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", Arterial$RoadName , "<br>",
                             "Total PM Flow: ", Arterial$Tot_Flow_PM
                             ),
-              weight = log(Arterial$Tot_Flow_PM), 
+              weight = log(Arterial$Tot_Flow_PM)/4, 
               group="Arterial") %>%
   addPolylines(data=MajorArterial,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
                             "Total PM Flow: ", MajorArterial$Tot_Flow_PM
                             ),
-              weight = log(MajorArterial$Tot_Flow_PM), 
+              weight = log(MajorArterial$Tot_Flow_PM)/4, 
               group="MajorArterial") %>%
   addPolylines(data=Freeway,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", Freeway$RoadName , "<br>",
                             "Total PM Flow: ", Freeway$Tot_Flow_PM
                             ),
-              weight = log(Freeway$Tot_Flow_PM), 
+              weight = log(Freeway$Tot_Flow_PM)/3, 
               group="Freeway") %>%
 
 
@@ -325,51 +328,51 @@ vol_map <- leaflet()%>%
               popup = paste("Road Name: ", local$RoadName , "<br>",
                             "Total AM Flow: ", local$Tot_Flow_AM
                             ),
-              weight = log(local$Tot_Flow_AM), 
+              weight = log(local$Tot_Flow_AM)/5, 
               group="Local") %>%
   addPolylines(data=TLHighway,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
                             "Total AM Flow: ", TLHighway$Tot_Flow_AM
                             ),
-              weight = log(TLHighway$Tot_Flow_AM), 
+              weight = log(TLHighway$Tot_Flow_AM)/5, 
               group="TLHighway") %>%
   
   addPolylines(data=MajorCollector,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
                             "Total AM Flow: ", MajorCollector$Tot_Flow_AM
                             ),
-              weight = log(MajorCollector$Tot_Flow_AM), 
+              weight = log(MajorCollector$Tot_Flow_AM)/5, 
               group="MajorCollector") %>%
   addPolylines(data=Collector,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", Collector$RoadName , "<br>",
                             "Total AM Flow: ", Collector$Tot_Flow_AM
                             ),
-              weight = log(Collector$Tot_Flow_AM), 
+              weight = log(Collector$Tot_Flow_AM)/5, 
               group="Collector") %>%
   addPolylines(data=MLHighway,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
                             "Total AM Flow: ", MLHighway$Tot_Flow_AM
                             ),
-              weight = log(MLHighway$Tot_Flow_AM), 
+              weight = log(MLHighway$Tot_Flow_AM)/4, 
               group="MLHighway") %>%
   
   addPolylines(data=Arterial,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", Arterial$RoadName , "<br>",
                             "Total AM Flow: ", Arterial$Tot_Flow_AM
                             ),
-              weight = log(Arterial$Tot_Flow_AM), 
+              weight = log(Arterial$Tot_Flow_AM)/4, 
               group="Arterial") %>%
   addPolylines(data=MajorArterial,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
                             "Total AM Flow: ", MajorArterial$Tot_Flow_AM
                             ),
-              weight = log(MajorArterial$Tot_Flow_AM), 
+              weight = log(MajorArterial$Tot_Flow_AM)/4, 
               group="MajorArterial") %>%
   addPolylines(data=Freeway,color=~volume_pal(Tot_Flow_AM),  
               popup = paste("Road Name: ", Freeway$RoadName , "<br>",
                             "Total AM Flow: ", Freeway$Tot_Flow_AM
                             ),
-              weight = log(Freeway$Tot_Flow_AM), 
+              weight = log(Freeway$Tot_Flow_AM)/3, 
               group="Freeway") %>%
 
 
@@ -410,11 +413,11 @@ Capacity & Congestion {.storyboard data-icon="fa-clock"}
 
 
 
-congested_bins <- c(0,1,3,5, 7, 10)
+congested_bins <- c(0,5, 10,25,100,250, 850)
 
 congested_pal <- colorBin(
   palette = "YlOrRd", na.color = "#808080",
-#  bins=congested_bins,
+  bins=congested_bins,
   domain = g2$Total_Delay_Daily)
 
 
@@ -472,7 +475,7 @@ cong_map <- leaflet()%>%
             pal=congested_pal,
             value=g2$Total_Delay_Daily,
          #   group="Freeways AM",
-            title="Delay") %>%
+            title="Delay (Hours)") %>%
 
   addLayersControl(overlayGroups = c("Local", "TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
                    options = layersControlOptions(collapsed = TRUE))
@@ -485,8 +488,7 @@ cong_map %>% hideGroup("Local") %>%hideGroup("TLHighway") %>%hideGroup("MajorCol
 
 ***
 
-Here is some commentary on graph 1
-
+While some links in the model are uni-directional (one-way) others are bi-directional. Congested Time represents total delay in both directions for each link. 
 
 ### AM VOC
 
