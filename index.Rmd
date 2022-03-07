@@ -494,14 +494,16 @@ While some links in the model are uni-directional (one-way) others are bi-direct
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
+library(viridis)
+library(RColorBrewer)
 
-
-congested_bins <- c(0,1,3,5, 7, 10)
+congested_bins <- c(0,.4,.8,1.2,1.6)
 
 congested_pal <- colorBin(
-  palette = "YlOrRd", na.color = "#808080",
-#  bins=congested_bins,
-  domain = g2$Max_VOC_AM)
+  palette = "PiYG", na.color = "#808080",
+  bins=congested_bins,
+  domain = g2$Max_VOC_AM,
+  reverse=TRUE)
 
 
 cong_map <- leaflet()%>%
@@ -579,14 +581,15 @@ Here is some commentary on graph 2
 
 
 
-
-
-congested_bins <- c(0,1,3,5, 7, 10)
+congested_bins <- c(0,.4,.8,1.2,1.6)
 
 congested_pal <- colorBin(
-  palette = "YlOrRd", na.color = "#808080",
-#  bins=congested_bins,
-  domain = g2$Max_VOC_PM)
+  palette = "PiYG", na.color = "#808080",
+  bins=congested_bins,
+  domain = g2$Max_VOC_PM,
+  reverse=TRUE)
+
+
 
 
 cong_map <- leaflet()%>%
