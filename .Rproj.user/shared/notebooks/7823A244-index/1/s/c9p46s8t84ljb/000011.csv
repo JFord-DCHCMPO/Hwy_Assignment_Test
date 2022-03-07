@@ -1,0 +1,7 @@
+"0","
+
+p <- ggplot(data=flow_flip, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity') + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = """")
+
+ggplotly(p) 
+"
+"0",""

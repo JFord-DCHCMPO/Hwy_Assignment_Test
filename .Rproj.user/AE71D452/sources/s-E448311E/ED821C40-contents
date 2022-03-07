@@ -1,0 +1,57 @@
+---
+title: "Triangle Regional Model Highway Metrics"
+output: 
+  flexdashboard::flex_dashboard:
+     storyboard: true
+     theme:
+       version: 5
+
+    
+---
+
+
+Summary Stats {.storyboard data-icon="fa-clock"}
+=========================================
+
+### Two Plots
+
+You should see two plots.
+
+#### Plot1: wt, hp
+
+```{r}
+plotDf <- mtcars[,c("wt","hp")]
+plot(plotDf)
+```
+
+#### Plot2: mpg, disp
+
+```{r}
+plotDf <- mtcars[,c("mpg","disp")]
+plot(plotDf)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
