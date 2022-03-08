@@ -33,6 +33,7 @@ library(ggpmisc)
 library(plotly)
 library(data.table)
 library(knitr)
+library(scales)
 
 
 temp <-  read_tcad("C:/Users/JacobFo/TRMG2_v0.2/scenarios/base_2016/output/networks/scenario_links.bin") %>%
@@ -810,9 +811,11 @@ joined <- rbind(flow_flip, vmt_flip, vht_flip)
 
 
 
-p <- ggplot(data=flow_flip, aes(x=reorder(County, -temp), y=temp, fill = Output)) + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+p <- ggplot(data=flow_flip, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity',fill="orange") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
+
 
 
 ```
