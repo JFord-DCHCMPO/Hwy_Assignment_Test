@@ -4,11 +4,11 @@ author: "Jacob Ford DCHC MPO"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
+    vertical_layout: scroll
     storyboard: true
     theme:
        version: 5
-   vertical_layout: scroll
-
+   
 ---
 
 
