@@ -1,0 +1,58 @@
+"0","
+  
+v <- st_read(""C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016/Input/Highway/Hwy Line.shp"") 
+"
+"1","Reading layer `"
+"1","Hwy Line"
+"1","' from data source "
+"1","`"
+"1","C:\Users\JacobFo\OneDrive - City of Durham\Full Model Runs\Original TRMv6.2_2016\Input\Highway\Hwy Line.shp"
+"1","' "
+"1","using driver `"
+"1","ESRI Shapefile"
+"1","'"
+"1","
+"
+"1","Simple feature collection with 20567 features and 226 fields"
+"1","
+"
+"1","Geometry type: LINESTRING
+"
+"1","Dimension:     XY
+"
+"1","Bounding box:  "
+"1","xmin: -79.40624 ymin: 35.334 xmax: -78.12458 ymax: 36.49905"
+"1","
+"
+"1","Geodetic CRS:  NAD83
+"
+"0","##Add VMT field"
+"0","v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)"
+"0",""
+"0",""
+"0","##get rid of NA values, set to zero:"
+"0",""
+"0","v[is.na(v)]<-0"
+"0",""
+"0","v$COUNTY <- tolower(v$COUNTY)"
+"0",""
+"0",""
+"0","##Add Daily Counts file: "
+"0","v_counts <- read_tcad(""C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016/EvalModule/TRM6_Count_2016_Observed.bin"") %>%"
+"0","  select(ID, Daily_Counts)"
+"1","[1m[33mError[39m in [38;5;255m[38;5;251m[48;5;235m`stop_subscript()`[49m[38;5;255m[39m:[22m
+[33m![39m Can't subset columns that don't exist.
+[31mx[39m Column `Daily_Counts` doesn't exist.
+Backtrace:
+[90m  1. [39m... %>% select(ID, Daily_Counts)
+[90m  3. [39m[1mdplyr[22m:::select.data.frame(., ID, Daily_Counts)
+[90m  4. [39m[1mtidyselect[22m::eval_select(expr(c(...)), .data)
+[90m  5. [39mtidyselect:::eval_select_impl(...)
+[90m 13. [39mtidyselect:::vars_select_eval(...)
+     ...
+[90m 20. [39mtidyselect:::chr_as_locations(x, vars)
+[90m 21. [39m[1mvctrs[22m::vec_as_location(x, n = length(vars), names = vars)
+[90m 22. [39mvctrs `<fn>`()
+[90m 23. [39mvctrs:::stop_subscript_oob(...)
+[90m 24. [39mvctrs:::stop_subscript(...)
+"
