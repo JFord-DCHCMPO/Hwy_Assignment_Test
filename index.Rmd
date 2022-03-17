@@ -639,9 +639,8 @@ County Statistics {.storyboard data-icon="ion-stats-bars"}
 
 
 
-### Demographic Data
 
-#### Population
+### Population
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(scales)
@@ -671,7 +670,7 @@ ggplotly(p)
 ```
 
 
-#### Education
+### Education
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(scales)
 
@@ -733,9 +732,9 @@ ggplotly(p)
 
 
 
-### Model Outputs
 
-#### Total Trips
+
+### Total Trips
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -786,7 +785,7 @@ ggplotly(p)
 ```
 
 
-#### VHT
+### VHT
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -836,7 +835,7 @@ ggplotly(p)
 ```
 
 
-#### VMT
+### VMT
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -888,7 +887,7 @@ ggplotly(p)
 
 
 
-### Trips
+### Trip Ratios
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
