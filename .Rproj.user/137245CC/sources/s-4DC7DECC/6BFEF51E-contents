@@ -1,0 +1,909 @@
+---
+title: "Triangle Regional Model 2020 Highway Metrics"
+author: "Triangle Regional Model Service Bureau"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    storyboard: true
+    theme:
+       version: 5
+   
+---
+
+
+
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(xlsx)
+library(readxl)
+library(sf)
+library(leaflet)
+library(rgdal)
+library(sp)
+library(ggplot2)
+library(tcadr)
+library(caliperR)
+library(tcadr)
+library(janitor)
+library(data.table)
+library(dplyr)
+library(ggpmisc)
+library(plotly)
+library(data.table)
+library(knitr)
+library(scales)
+
+
+temp <-  read_tcad("C:/Work/Jake/scenario_links.bin") %>%
+  filter(Total_Flow_Daily > 0) %>%
+  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily)
+
+g2_geo <-  st_read("C:/Work/Jake/scenario_links.shp")
+
+g2_geo <- g2_geo %>%
+  filter(g2_geo$ID %in% temp$ID)
+
+g2 <- cbind(temp, g2_geo)
+
+
+
+g2$County <- tolower(g2$County)
+
+
+
+temp <- read_tcad("C:/Work/Jake/scenario_se.bin") %>%
+  filter(Type !="External")
+
+get_counties <-read_tcad("C:/Work/Jake/master_tazs.bin") %>% select(TAZ = ID,  County) 
+
+se_2020 <- merge(temp, get_counties)
+
+se_2020$County <- tolower(se_2020$County)
+
+##  
+  
+##v <- st_read("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016/Input/Highway/Hwy Line.shp") 
+
+##Add VMT field
+##v$ToT_VMT <- (v$ABAMVMT+ v$ABMDVMT+ v$ABNTVMT+ v$ABPMVMT+v$BAAMVMT+v$BAMDVMT+ v$BANTVMT+ v$BAPMVMT)
+
+
+##get rid of NA values, set to zero:
+
+##v[is.na(v)]<-0
+
+##v$COUNTY <- tolower(v$COUNTY)
+
+
+##Add Daily Counts file: 
+##v_counts <- read_tcad("C:/Users/JacobFo/OneDrive - City of Durham/Full Model Runs/Original TRMv6.2_2016/EvalModule/TRM6_Count_2016_Observed.bin") %>%
+##  select(ID, Daily_Counts=Daily.Counts)
+
+
+##Final TRMv6.2 line layer with counts
+##add_counts <- left_join(v, v_counts)
+
+g2 <- st_as_sf(g2)
+
+
+
+TLHighway <- g2 %>%
+  filter(HCMType=="TLHighway")
+
+TLHighway <- st_as_sf(TLHighway)
+
+MajorCollector <- g2 %>%
+  filter(HCMType=="MajorCollector")
+
+MajorCollector <- st_as_sf(MajorCollector)
+
+Collector <- g2 %>%
+  filter(HCMType=="Collector")
+
+Collector <- st_as_sf(Collector)
+
+MLHighway <- g2 %>%
+  filter(HCMType=="MLHighway")
+
+MLHighway <- st_as_sf(MLHighway)
+
+MajorArterial <- g2 %>%
+  filter(HCMType=="MajorArterial")
+
+MajorArterial <- st_as_sf(MajorArterial)
+
+Arterial <- g2 %>%
+  filter(HCMType=="Arterial")
+
+Arterial <- st_as_sf(Arterial)
+
+Freeway <- g2 %>%
+  filter(HCMType=="Freeway")
+
+Freeway <- st_as_sf(Freeway)
+
+
+```
+
+
+Highway Assignment Maps {.storyboard data-icon="ion-android-globe"}
+=====================================  
+
+
+
+### Daily Volume
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#colores <- c('grey', 'lightgreen', 'pink', 'green', 'blue', 'orange', 'red',  'darkred')
+
+bins = c(0,2500,5000,10000,25000,50000,125000)
+
+
+volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
+
+
+
+vol_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%
+
+  addPolylines(data=TLHighway,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "Total Flow: ", TLHighway$Total_Flow_Daily
+                            ),
+              weight = log(TLHighway$Total_Flow_Daily)/5, 
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "Total Flow: ", MajorCollector$Total_Flow_Daily
+                            ),
+              weight = log(MajorCollector$Total_Flow_Daily)/5, 
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "Total Flow: ", Collector$Total_Flow_Daily
+                            ),
+              weight = log(Collector$Total_Flow_Daily)/5, 
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "Total Flow: ", MLHighway$Total_Flow_Daily
+                            ),
+              weight = log(MLHighway$Total_Flow_Daily)/4, 
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "Total Flow: ", Arterial$Total_Flow_Daily
+                            ),
+              weight = log(Arterial$Total_Flow_Daily)/4, 
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "Total Flow: ", MajorArterial$Total_Flow_Daily
+                            ),
+              weight = log(MajorArterial$Total_Flow_Daily)/4, 
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~volume_pal(Total_Flow_Daily),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "Total Flow: ", Freeway$Total_Flow_Daily
+                            ),
+              weight = log(Freeway$Total_Flow_Daily)/3, 
+              group="Freeway") %>%
+
+
+      addLegend("bottomright",
+            pal=volume_pal,
+            value=g2$Total_Flow_Daily,
+        #  group="Freeways",
+            title="Volume") %>%
+  
+
+  
+  
+
+  
+  addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+896
+vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
+```
+
+***
+
+The TRMG2 2020 base year highway assignment by time of day are presented here. Click the layers button to select HCMType for more focused viewing. 
+
+
+
+### PM Volume
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+bins = c(0,2500,5000,10000,15000,20000,30000)
+
+
+volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_PM, bins = bins)
+
+
+vol_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
+  addPolylines(data=TLHighway,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "Total PM Flow: ", TLHighway$Tot_Flow_PM
+                            ),
+              weight = log(TLHighway$Tot_Flow_PM)/5, 
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "Total PM Flow: ", MajorCollector$Tot_Flow_PM
+                            ),
+              weight = log(MajorCollector$Tot_Flow_PM)/5, 
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "Total PM Flow: ", Collector$Tot_Flow_PM
+                            ),
+              weight = log(Collector$Tot_Flow_PM)/5, 
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "Total PM Flow: ", MLHighway$Tot_Flow_PM
+                            ),
+              weight = log(MLHighway$Tot_Flow_PM)/4, 
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "Total PM Flow: ", Arterial$Tot_Flow_PM
+                            ),
+              weight = log(Arterial$Tot_Flow_PM)/4, 
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "Total PM Flow: ", MajorArterial$Tot_Flow_PM
+                            ),
+              weight = log(MajorArterial$Tot_Flow_PM)/4, 
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~volume_pal(Tot_Flow_PM),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "Total PM Flow: ", Freeway$Tot_Flow_PM
+                            ),
+              weight = log(Freeway$Tot_Flow_PM)/3, 
+              group="Freeway") %>%
+
+
+      addLegend("bottomright",
+            pal=volume_pal,
+            value=g2$Tot_Flow_PM,
+         #   group="Freeways AM",
+            title="PM Volume") %>%
+  
+  
+
+  
+  
+  addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+
+vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
+```
+
+
+
+
+
+
+### AM Volume
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+bins = c(0,2500,5000,7500,10000,15000,20000)
+
+volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_AM, bins = bins)
+
+
+vol_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>% 
+
+  addPolylines(data=TLHighway,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "Total AM Flow: ", TLHighway$Tot_Flow_AM
+                            ),
+              weight = log(TLHighway$Tot_Flow_AM)/5, 
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "Total AM Flow: ", MajorCollector$Tot_Flow_AM
+                            ),
+              weight = log(MajorCollector$Tot_Flow_AM)/5, 
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "Total AM Flow: ", Collector$Tot_Flow_AM
+                            ),
+              weight = log(Collector$Tot_Flow_AM)/5, 
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "Total AM Flow: ", MLHighway$Tot_Flow_AM
+                            ),
+              weight = log(MLHighway$Tot_Flow_AM)/4, 
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "Total AM Flow: ", Arterial$Tot_Flow_AM
+                            ),
+              weight = log(Arterial$Tot_Flow_AM)/4, 
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "Total AM Flow: ", MajorArterial$Tot_Flow_AM
+                            ),
+              weight = log(MajorArterial$Tot_Flow_AM)/4, 
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~volume_pal(Tot_Flow_AM),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "Total AM Flow: ", Freeway$Tot_Flow_AM
+                            ),
+              weight = log(Freeway$Tot_Flow_AM)/3, 
+              group="Freeway") %>%
+
+
+      addLegend("bottomright",
+            pal=volume_pal,
+            value=g2$Tot_Flow_AM,
+         #   group="Freeways AM",
+            title="AM Volume") %>%
+  
+  
+
+  
+  addLayersControl(overlayGroups = c( "TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+
+vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+Capacity & Congestion {.storyboard data-icon="fa-clock"}
+=====================================  
+
+### Congested Time
+ 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+congested_bins <- c(0, 5, 10, 50, 100, 250, 500)
+
+congested_pal <- colorBin(
+  palette = "YlOrRd", na.color = "#808080",
+  bins=congested_bins,
+  domain = g2$Total_Delay_Daily)
+
+
+
+cong_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
+  addPolylines(data=TLHighway,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "Total Delay: ", TLHighway$Total_Delay_Daily
+                            ),
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "Total Delay: ", MajorCollector$Total_Delay_Daily
+                            ),
+             # size=MajorCollector$Total_Flow_Daily,
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "Total Delay: ", Collector$Total_Delay_Daily
+                            ),
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "Total Delay: ", MLHighway$Total_Delay_Daily
+                            ),
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "Total Delay: ", Arterial$Total_Delay_Daily
+                            ),
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "Total Delay: ", MajorArterial$Total_Delay_Daily
+                            ),
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~congested_pal(Total_Delay_Daily),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "Total Delay: ", Freeway$Total_Delay_Daily
+                            ),
+              group="Freeway") %>%
+
+
+
+      addLegend("bottomright",
+            pal=congested_pal,
+            value=g2$Total_Delay_Daily,
+         #   group="Freeways AM",
+            title="Delay (Hours)") %>%
+
+  addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+
+cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+```
+
+
+
+***
+
+While some links in the model are uni-directional (one-way) others are bi-directional. Congested Time represents total delay in both directions for each link. 
+
+### AM VOC
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+congested_bins <- c(0,.4,.8,1.2,1.6)
+
+congested_pal <- colorBin(
+  palette = c("#B2182B", "#F4A582", "#D1E5F0", "#92C5DE"), na.color = "#808080",
+  bins=congested_bins,
+  domain = g2$Max_VOC_AM,
+  reverse=TRUE)
+
+
+cong_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
+  addPolylines(data=TLHighway,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "AM VOC: ", TLHighway$Max_VOC_AM
+                            ),
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "AM VOC: ", MajorCollector$Max_VOC_AM
+                            ),
+             # size=MajorCollector$Total_Flow_Daily,
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "AM VOC: ", Collector$Max_VOC_AM
+                            ),
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "AM VOC: ", MLHighway$Max_VOC_AM
+                            ),
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "AM VOC: ", Arterial$Max_VOC_AM
+                            ),
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "AM VOC: ", MajorArterial$Max_VOC_AM
+                            ),
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~congested_pal(Max_VOC_AM),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "AM VOC: ", Freeway$Max_VOC_AM
+                            ),
+              group="Freeway") %>%
+
+
+
+      addLegend("bottomright",
+            pal=congested_pal,
+            value=g2$Max_VOC_AM,
+         #   group="Freeways AM",
+            title="AM VOC") %>%
+  
+  addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+
+cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
+```
+
+
+
+***
+
+Volume-to-Capacity is a common metric to measure the usage and capacity of a particular roadway. V/C ratios are a critical input in determining the Level of service (LOS), a qualitative metric graded A to F, representing the best to worst operating conditions. 
+
+
+### PM VOC
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+congested_bins <- c(0,.4,.8,1.2,1.6)
+
+congested_pal <- colorBin(
+  palette = c("#B2182B", "#F4A582", "#D1E5F0", "#92C5DE"), na.color = "#808080",
+  bins=congested_bins,
+  domain = g2$Max_VOC_PM,
+  reverse=TRUE)
+
+
+
+
+cong_map <- leaflet()%>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
+  addPolylines(data=TLHighway,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
+                            "PM VOC: ", TLHighway$Max_VOC_PM
+                            ),
+              group="TLHighway") %>%
+  
+  addPolylines(data=MajorCollector,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
+                            "PM VOC: ", MajorCollector$Max_VOC_PM
+                            ),
+             # size=MajorCollector$Total_Flow_Daily,
+              group="MajorCollector") %>%
+  addPolylines(data=Collector,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", Collector$RoadName , "<br>",
+                            "PM VOC: ", Collector$Max_VOC_PM
+                            ),
+              group="Collector") %>%
+  addPolylines(data=MLHighway,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", MLHighway$RoadName , "<br>",
+                            "PM VOC: ", MLHighway$Max_VOC_PM
+                            ),
+              group="MLHighway") %>%
+  
+  addPolylines(data=Arterial,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", Arterial$RoadName , "<br>",
+                            "PM VOC: ", Arterial$Max_VOC_PM
+                            ),
+              group="Arterial") %>%
+  addPolylines(data=MajorArterial,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", MajorArterial$RoadName , "<br>",
+                            "PM VOC: ", MajorArterial$Max_VOC_PM
+                            ),
+              group="MajorArterial") %>%
+  addPolylines(data=Freeway,color=~congested_pal(Max_VOC_PM),  
+              popup = paste("Road Name: ", Freeway$RoadName , "<br>",
+                            "PM VOC: ", Freeway$Max_VOC_PM
+                            ),
+              group="Freeway") %>%
+
+
+
+      addLegend("bottomright",
+            pal=congested_pal,
+            value=g2$Max_VOC_PM,
+         #   group="Freeways AM",
+            title="PM VOC") %>%
+  
+  
+  addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
+                   options = layersControlOptions(collapsed = TRUE))
+
+
+cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+County Statistics {.storyboard data-icon="ion-stats-bars"}
+=====================================  
+
+
+
+
+### Population
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+county_data <- se_2020 %>%
+  group_by(County) %>%
+  summarize(
+   Population = sum(HH_POP, na.rm=T),
+    Households = sum(HH, na.rm=T)#,
+   # K12 = sum(K12, na.rm=T),
+   # 'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+   # 'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
+
+temp <- melt(as.data.table(county_data))
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p)
+
+
+
+
+
+```
+
+
+### Education
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+county_data <- se_2020 %>%
+  group_by(County) %>%
+  summarize(
+   # Population = sum(HH_POP, na.rm=T),
+    #Households = sum(HH, na.rm=T)#,
+   K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
+
+temp <- melt(as.data.table(county_data))
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Education County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p)
+
+
+
+
+
+```
+
+### Employment
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+
+county_data <- se_2020 %>%
+  group_by(County) %>%
+  summarize(
+   # 'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    'Industry' = sum(Industry, na.rm=T),
+    'Office' = sum(Office, na.rm=T),
+    'Service Rate Low'= sum(Service_RateLow, na.rm=T),
+    'Service Rate High' = sum(Service_RateHigh, na.rm=T),
+    Retail = sum(Retail, na.rm=T)
+      )
+
+temp <- melt(as.data.table(county_data))
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p)
+
+
+
+
+
+```
+
+
+
+
+
+
+
+### Total Trips
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+flow_flip <- g2 %>%
+  st_drop_geometry() %>%
+  group_by(County) %>%
+  filter(DailyCount > 0) %>%
+  filter(County != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    Total_Flow = sum(Total_Flow_Daily, na.rm=T)) %>%
+  arrange(County)%>%
+  mutate(Total_Flow = round(Total_Flow, 0))
+
+
+p <- ggplot(data=flow_flip, aes(x=County, y=Total_Flow)) +geom_bar(stat='identity',fill="orange") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+
+ggplotly(p) 
+
+
+
+```
+
+
+### VHT
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+vht_flip <- g2 %>%  
+  st_drop_geometry()%>%
+  group_by(County) %>%
+  filter(DailyCount > 0) %>%
+  filter(County != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    Total_VHT = sum(Total_VHT_Daily, na.rm=T)) %>%
+  arrange(County)%>%
+  mutate(Total_VHT = round(Total_VHT, 0))
+
+
+
+p <- ggplot(data=vht_flip, aes(x=County, y=Total_VHT)) +geom_bar(stat='identity',fill="blue") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+
+ggplotly(p) 
+
+
+
+```
+
+
+### VMT
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+vmt_flip <- g2 %>%  
+  st_drop_geometry()%>%
+  group_by(County) %>%
+  filter(DailyCount > 0) %>%
+  filter(County != "") %>% ##filters empty space for tagged links with no counties 
+  summarise(
+    Total_VMT = sum(Total_VMT_Daily, na.rm=T)) %>%
+  arrange(County)%>%
+  mutate(Total_VMT = round(Total_VMT, 0))
+
+
+
+
+
+p <- ggplot(data=vmt_flip, aes(x=County, y=Total_VMT)) +geom_bar(stat='identity',fill="grey") + theme_classic() + xlab('')+ ylab('')+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+
+
+```
+
+
+
+
+### Trip Ratios
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+county_data <- se_2020 %>%
+  group_by(County) %>%
+  summarize(
+    Population = sum(HH_POP, na.rm=T),
+    'Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
+    Households = sum(HH, na.rm=T),
+    K12 = sum(K12, na.rm=T),
+    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
+    'College On-Campus' = sum(CollegeOff, na.rm=T)
+      )
+
+temp <- merge(county_data, flow_flip) %>%
+  mutate('Trips/Person' = round(Total_Flow/Population, 1),
+         'Trips/HH' = round(Total_Flow/Households, 1),
+         'Trips/Job' = round(Total_Flow/Employment, 1)) %>%
+  select(County, 'Trips/Person', 'Trips/HH','Trips/Job')
+
+temp <- melt(as.data.table(temp))
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+```
+
+
+
+### VMT
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+temp <- merge(county_data, vmt_flip) %>%
+  mutate('VMT/Person' = round(Total_VMT/Population, 1),
+         'VMT/HH' = round(Total_VMT/Households, 1),
+         'VMT/Job' = round(Total_VMT/Employment, 1)) %>%
+  select(County, 'VMT/Person', 'VMT/HH','VMT/Job')
+
+temp <- melt(as.data.table(temp))
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+```
+
+
+
+
+### VHT
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+temp <- merge(county_data, vht_flip) %>%
+  mutate('VHT/Person' = round(Total_VHT/Population,1),
+         'VHT/HH' = round(Total_VHT/Households, 1),
+         'VHT/Job' = round(Total_VHT/Employment, 1)) %>%
+  select(County, 'VHT/Person', 'VHT/HH','VHT/Job')
+
+temp <- melt(as.data.table(temp))
+
+
+
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+ggplotly(p) 
+
+```
+
+
+
+Overview {.storyboard}
+=====================================  
+
+**Acronyms**
+
+1. VMT: Vehicle Miles Traveled
+
+2. VHT: Vehicle Hours Traveled
+
+3. VOC: Volume-over-Capacity ratio
+
+
+
+
+
+
+
+
+
+

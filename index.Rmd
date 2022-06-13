@@ -1,6 +1,6 @@
 ---
-title: "Triangle Regional Model Highway Metrics"
-author: "Jacob Ford DCHC MPO"
+title: "Triangle Regional Model 2020 Highway Metrics"
+author: "Triangle Regional Model Service Bureau"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
@@ -137,7 +137,7 @@ Highway Assignment Maps {.storyboard data-icon="ion-android-globe"}
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #colores <- c('grey', 'lightgreen', 'pink', 'green', 'blue', 'orange', 'red',  'darkred')
 
-bins = c(0,500,2500,5000,10000,50000,125000)
+bins = c(0,2500,5000,10000,25000,50000,125000)
 
 
 volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
@@ -208,13 +208,13 @@ vol_map <- leaflet()%>%
   addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
                    options = layersControlOptions(collapsed = TRUE))
 
-
-vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+896
+vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 ```
 
 ***
 
-The TRMG2 2016 base year highway assignment files by time of day (just AM and PM in Beta version) are presented here. Click the layers button to select HCMType for more focused viewing. 
+The TRMG2 2020 base year highway assignment by time of day are presented here. Click the layers button to select HCMType for more focused viewing. 
 
 
 
@@ -223,7 +223,7 @@ The TRMG2 2016 base year highway assignment files by time of day (just AM and PM
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 
-bins = c(0,500,2500,5000,10000,50000,125000)
+bins = c(0,2500,5000,10000,15000,20000,30000)
 
 
 volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_PM, bins = bins)
@@ -292,7 +292,7 @@ vol_map <- leaflet()%>%
                    options = layersControlOptions(collapsed = TRUE))
 
 
-vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 ```
 
 
@@ -304,8 +304,9 @@ vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup(
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
+bins = c(0,2500,5000,7500,10000,15000,20000)
 
-volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_AM)
+volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_AM, bins = bins)
 
 
 vol_map <- leaflet()%>%
@@ -371,7 +372,7 @@ vol_map <- leaflet()%>%
                    options = layersControlOptions(collapsed = TRUE))
 
 
-vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 ```
 
 
@@ -393,9 +394,7 @@ Capacity & Congestion {.storyboard data-icon="fa-clock"}
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-
-
-congested_bins <- c(0,5, 10,25,100,250, 850)
+congested_bins <- c(0, 5, 10, 50, 100, 250, 500)
 
 congested_pal <- colorBin(
   palette = "YlOrRd", na.color = "#808080",
@@ -471,13 +470,10 @@ While some links in the model are uni-directional (one-way) others are bi-direct
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-library(viridis)
-library(RColorBrewer)
-
 congested_bins <- c(0,.4,.8,1.2,1.6)
 
 congested_pal <- colorBin(
-  palette = "PiYG", na.color = "#808080",
+  palette = c("#B2182B", "#F4A582", "#D1E5F0", "#92C5DE"), na.color = "#808080",
   bins=congested_bins,
   domain = g2$Max_VOC_AM,
   reverse=TRUE)
@@ -537,7 +533,7 @@ cong_map <- leaflet()%>%
                    options = layersControlOptions(collapsed = TRUE))
 
 
-cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 ```
 
 
@@ -551,12 +547,10 @@ Volume-to-Capacity is a common metric to measure the usage and capacity of a par
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-
-
 congested_bins <- c(0,.4,.8,1.2,1.6)
 
 congested_pal <- colorBin(
-  palette = "PiYG", na.color = "#808080",
+  palette = c("#B2182B", "#F4A582", "#D1E5F0", "#92C5DE"), na.color = "#808080",
   bins=congested_bins,
   domain = g2$Max_VOC_PM,
   reverse=TRUE)
@@ -745,38 +739,12 @@ flow_flip <- g2 %>%
   filter(DailyCount > 0) %>%
   filter(County != "") %>% ##filters empty space for tagged links with no counties 
   summarise(
-    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
-  arrange(County) %>%
-  mutate(Output= "Total Flow")
-
-vmt_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
+    Total_Flow = sum(Total_Flow_Daily, na.rm=T)) %>%
   arrange(County)%>%
-  mutate(Output= "VMT")
-
-vht_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VHT")
+  mutate(Total_Flow = round(Total_Flow, 0))
 
 
-joined <- rbind(flow_flip, vmt_flip, vht_flip)
-
-
-
-
-
-p <- ggplot(data=flow_flip, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity',fill="orange") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=flow_flip, aes(x=County, y=Total_Flow)) +geom_bar(stat='identity',fill="orange") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
 
 ggplotly(p) 
 
@@ -790,43 +758,19 @@ ggplotly(p)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-flow_flip <- g2 %>%
-  st_drop_geometry() %>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
-  arrange(County) %>%
-  mutate(Output= "Total Flow")
-
-vmt_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VMT")
-
 vht_flip <- g2 %>%  
   st_drop_geometry()%>%
   group_by(County) %>%
   filter(DailyCount > 0) %>%
   filter(County != "") %>% ##filters empty space for tagged links with no counties 
   summarise(
-    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
+    Total_VHT = sum(Total_VHT_Daily, na.rm=T)) %>%
   arrange(County)%>%
-  mutate(Output= "VHT")
-
-
-joined <- rbind(flow_flip, vmt_flip, vht_flip)
+  mutate(Total_VHT = round(Total_VHT, 0))
 
 
 
-
-p <- ggplot(data=vht_flip, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity',fill="blue") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=vht_flip, aes(x=County, y=Total_VHT)) +geom_bar(stat='identity',fill="blue") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
 
 ggplotly(p) 
 
@@ -840,43 +784,21 @@ ggplotly(p)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-flow_flip <- g2 %>%
-  st_drop_geometry() %>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
-  arrange(County) %>%
-  mutate(Output= "Total Flow")
-
 vmt_flip <- g2 %>%  
   st_drop_geometry()%>%
   group_by(County) %>%
   filter(DailyCount > 0) %>%
   filter(County != "") %>% ##filters empty space for tagged links with no counties 
   summarise(
-    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
+    Total_VMT = sum(Total_VMT_Daily, na.rm=T)) %>%
   arrange(County)%>%
-  mutate(Output= "VMT")
-
-vht_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VHT")
-
-
-joined <- rbind(flow_flip, vmt_flip, vht_flip)
+  mutate(Total_VMT = round(Total_VMT, 0))
 
 
 
 
-p <- ggplot(data=vmt_flip, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity',fill="grey") + theme_classic() + xlab('')+ ylab('')+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+
+p <- ggplot(data=vmt_flip, aes(x=County, y=Total_VMT)) +geom_bar(stat='identity',fill="grey") + theme_classic() + xlab('')+ ylab('')+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
@@ -903,10 +825,10 @@ county_data <- se_2020 %>%
       )
 
 temp <- merge(county_data, flow_flip) %>%
-  mutate('Trips/Person' = temp/Population,
-         'Trips/HH' = temp/Households, 
-         'Trips/Emp' = temp/Employment) %>%
-  select(County, 'Trips/Person', 'Trips/HH','Trips/Emp')
+  mutate('Trips/Person' = round(Total_Flow/Population, 1),
+         'Trips/HH' = round(Total_Flow/Households, 1),
+         'Trips/Job' = round(Total_Flow/Employment, 1)) %>%
+  select(County, 'Trips/Person', 'Trips/HH','Trips/Job')
 
 temp <- melt(as.data.table(temp))
 
@@ -925,10 +847,10 @@ ggplotly(p)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 temp <- merge(county_data, vmt_flip) %>%
-  mutate('VMT/Person' = temp/Population,
-         'VMT/HH' = temp/Households, 
-         'VMT/Emp' = temp/Employment) %>%
-  select(County, 'VMT/Person', 'VMT/HH','VMT/Emp')
+  mutate('VMT/Person' = round(Total_VMT/Population, 1),
+         'VMT/HH' = round(Total_VMT/Households, 1),
+         'VMT/Job' = round(Total_VMT/Employment, 1)) %>%
+  select(County, 'VMT/Person', 'VMT/HH','VMT/Job')
 
 temp <- melt(as.data.table(temp))
 
@@ -948,10 +870,10 @@ ggplotly(p)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 temp <- merge(county_data, vht_flip) %>%
-  mutate('VHT/Person' = temp/Population,
-         'VHT/HH' = temp/Households, 
-         'VHT/Emp' = temp/Employment) %>%
-  select(County, 'VHT/Person', 'VHT/HH','VHT/Emp')
+  mutate('VHT/Person' = round(Total_VHT/Population,1),
+         'VHT/HH' = round(Total_VHT/Households, 1),
+         'VHT/Job' = round(Total_VHT/Employment, 1)) %>%
+  select(County, 'VHT/Person', 'VHT/HH','VHT/Job')
 
 temp <- melt(as.data.table(temp))
 
@@ -960,237 +882,6 @@ temp <- melt(as.data.table(temp))
 p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
-
-```
-
-
-
-
-Cluster Statistics {.storyboard data-icon="ion-stats-bars"}
-=====================================  
-
-
-
-### Demographics
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(scales)
-
-flow_flip <- g2 %>%
-  st_drop_geometry() %>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
-  arrange(County) %>%
-  mutate(Output= "Total Flow")
-
-vmt_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VMT")
-
-vht_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VHT")
-
-
-joined <- rbind(flow_flip, vmt_flip, vht_flip)
-
-
-
-cluster_data <- se_2020 %>%
-  group_by(County) %>%
-  summarize(
-    Population = sum(HH_POP, na.rm=T),
-    Households = sum(HH, na.rm=T),
-    K12 = sum(K12, na.rm=T),
-    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
-    'College On-Campus' = sum(CollegeOff, na.rm=T)
-      )
-
-temp <- melt(as.data.table(cluster_data))
-
-
-
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
-
-ggplotly(p)
-
-
-
-
-
-```
-
-
-
-
-### Employment
-
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(scales)
-
-cluster_data <- se_2020 %>%
-  group_by(County) %>%
-  summarize(
-    'Total Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
-    'Industry' = sum(Industry, na.rm=T),
-    'Office' = sum(Office, na.rm=T),
-    'Service Rate Low'= sum(Service_RateLow, na.rm=T),
-    'Service Rate High' = sum(Service_RateHigh, na.rm=T),
-    Retail = sum(Retail, na.rm=T)
-      )
-
-temp <- melt(as.data.table(cluster_data))
-
-
-
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
-
-ggplotly(p)
-
-
-```
-
-
-
-### Model Outputs
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-flow_flip <- g2 %>%
-  st_drop_geometry() %>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_Flow_Daily, na.rm=T)) %>%
-  arrange(County) %>%
-  mutate(Output= "Total Flow")
-
-vmt_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VMT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VMT")
-
-vht_flip <- g2 %>%  
-  st_drop_geometry()%>%
-  group_by(County) %>%
-  filter(DailyCount > 0) %>%
-  filter(County != "") %>% ##filters empty space for tagged links with no counties 
-  summarise(
-    temp = sum(Total_VHT_Daily, na.rm=T)) %>%
-  arrange(County)%>%
-  mutate(Output= "VHT")
-
-
-joined <- rbind(flow_flip, vmt_flip, vht_flip)
-
-
-
-
-p <- ggplot(data=joined, aes(x=reorder(County, -temp), y=temp, fill = Output)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
-
-ggplotly(p) 
-
-
-```
-
-
-
-### Trips
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-cluster_data <- se_2020 %>%
-  group_by(County) %>%
-  summarize(
-    Population = sum(HH_POP, na.rm=T),
-    'Employment' = sum(Industry, Office, Service_RateLow, Service_RateHigh, Retail, na.rm=T),
-    Households = sum(HH, na.rm=T),
-    K12 = sum(K12, na.rm=T),
-    'College Off-Campus' = sum(StudGQ_NCSU, StudGQ_UNC,StudGQ_DUKE,StudGQ_NCCU, CollegeOn, na.rm=T),
-    'College On-Campus' = sum(CollegeOff, na.rm=T)
-      )
-
-temp <- merge(cluster_data, flow_flip) %>%
-  mutate('Trips/Person' = temp/Population,
-         'Trips/HH' = temp/Households, 
-         'Trips/Emp' = temp/Employment) %>%
-  select(County, 'Trips/Person', 'Trips/HH','Trips/Emp')
-
-temp <- melt(as.data.table(temp))
-
-
-
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
-
-ggplotly(p) 
-
-```
-
-
-
-### VMT
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-temp <- merge(cluster_data, vmt_flip) %>%
-  mutate('VMT/Person' = temp/Population,
-         'VMT/HH' = temp/Households, 
-         'VMT/Emp' = temp/Employment) %>%
-  select(County, 'VMT/Person', 'VMT/HH','VMT/Emp')
-
-temp <- melt(as.data.table(temp))
-
-
-
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
-
-ggplotly(p) 
-
-```
-
-
-
-
-### VHT
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-temp <- merge(cluster_data, vht_flip) %>%
-  mutate('VHT/Person' = temp/Population,
-         'VHT/HH' = temp/Households, 
-         'VHT/Emp' = temp/Employment) %>%
-  select(County, 'VHT/Person', 'VHT/HH','VHT/Emp')
-
-temp <- melt(as.data.table(temp))
-
-
-
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma) + labs(fill = "")
-
-ggplotly(p) 
-
 
 ```
 
@@ -1207,12 +898,6 @@ Overview {.storyboard}
 
 3. VOC: Volume-over-Capacity ratio
 
-4. Clusters: TRMG2 classifies sub-areas into clusters, refer to map below: 
-
-
-TRMG2  Cluster Map: 
-
-![](ClusterMap.png) 
 
 
 
