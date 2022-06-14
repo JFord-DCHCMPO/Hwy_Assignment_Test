@@ -5,10 +5,6 @@
 "2","Linking to GEOS 3.9.1, GDAL 3.3.2, PROJ 7.2.1; sf_use_s2() is TRUE
 "
 "0","library(leaflet)"
-"2","Registered S3 method overwritten by 'htmlwidgets':
-  method           from         
-  print.htmlwidget tools:rstudio
-"
 "0","library(rgdal)"
 "2","Loading required package: sp
 "
@@ -111,7 +107,18 @@ Attaching package: ‘plotly’
 "0",""
 "0","temp <-  read_tcad(""C:/Work/Jake/scenario_links.bin"") %>%"
 "0","  filter(Total_Flow_Daily > 0) %>%"
-"0","  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily)"
+"0","  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily)%>%"
+"0","  mutate("
+"0","    Total_Flow_Daily = round(Total_Flow_Daily,0),"
+"0","    Tot_Flow_PM = round(Tot_Flow_PM, 0),"
+"0","    Tot_Flow_AM = round(Tot_Flow_AM, 0),"
+"0","    Total_Delay_Daily = round(Total_Delay_Daily, 1),"
+"0","    Total_VHT_Daily = round(Total_VHT_Daily, 1),"
+"0","    Total_VMT_Daily = round(Total_VMT_Daily, 0),"
+"0","    Max_VOC_PM = round(Max_VOC_PM, 2),"
+"0","    Max_VOC_AM = round(Max_VOC_AM, 2)"
+"0","    "
+"0","  )"
 "2","Warning:"
 "2"," `tbl_df()` was deprecated in dplyr 1.0.0.
 Please use `tibble::as_tibble()` instead.
@@ -166,8 +173,6 @@ Please use a list of either functions or lambdas:
 "0",""
 "0",""
 "0","g2$County <- tolower(g2$County)"
-"0",""
-"0",""
 "0",""
 "0","temp <- read_tcad(""C:/Work/Jake/scenario_se.bin"") %>%"
 "0","  filter(Type !=""External"")"

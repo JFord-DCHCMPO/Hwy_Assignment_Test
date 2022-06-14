@@ -37,7 +37,18 @@ library(scales)
 
 temp <-  read_tcad("C:/Work/Jake/scenario_links.bin") %>%
   filter(Total_Flow_Daily > 0) %>%
-  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily)
+  select(ID, RoadName, HCMType, DailyCount, Total_Flow_Daily, Total_VMT_Daily, Total_Delay_Daily, County, Max_VOC_PM, Max_VOC_AM, AreaType, MPO,Tot_Flow_AM, Tot_Flow_PM, Total_VHT_Daily)%>%
+  mutate(
+    Total_Flow_Daily = round(Total_Flow_Daily,0),
+    Tot_Flow_PM = round(Tot_Flow_PM, 0),
+    Tot_Flow_AM = round(Tot_Flow_AM, 0),
+    Total_Delay_Daily = round(Total_Delay_Daily, 1),
+    Total_VHT_Daily = round(Total_VHT_Daily, 1),
+    Total_VMT_Daily = round(Total_VMT_Daily, 0),
+    Max_VOC_PM = round(Max_VOC_PM, 2),
+    Max_VOC_AM = round(Max_VOC_AM, 2)
+    
+  )
 
 g2_geo <-  st_read("C:/Work/Jake/scenario_links.shp")
 
@@ -49,8 +60,6 @@ g2 <- cbind(temp, g2_geo)
 
 
 g2$County <- tolower(g2$County)
-
-
 
 temp <- read_tcad("C:/Work/Jake/scenario_se.bin") %>%
   filter(Type !="External")
@@ -140,12 +149,12 @@ Highway Assignment Maps {.storyboard data-icon="ion-android-globe"}
 bins = c(0,2500,5000,10000,25000,50000,125000)
 
 
-volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
+volume_pal <- colorBin(palette="YlGnBu", na.color="#808080", domain=g2$Total_Flow_Daily, bins = bins)
 
 
 
 vol_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(minZoom=8, maxZoom=15)) %>%
   setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%
 
   addPolylines(data=TLHighway,color=~volume_pal(Total_Flow_Daily),  
@@ -154,7 +163,6 @@ vol_map <- leaflet()%>%
                             ),
               weight = log(TLHighway$Total_Flow_Daily)/5, 
               group="TLHighway") %>%
-  
   addPolylines(data=MajorCollector,color=~volume_pal(Total_Flow_Daily),  
               popup = paste("Road Name: ", MajorCollector$RoadName , "<br>",
                             "Total Flow: ", MajorCollector$Total_Flow_Daily
@@ -194,27 +202,22 @@ vol_map <- leaflet()%>%
               group="Freeway") %>%
 
 
-      addLegend("bottomright",
+  addLegend("bottomright",
             pal=volume_pal,
             value=g2$Total_Flow_Daily,
         #  group="Freeways",
             title="Volume") %>%
-  
-
-  
-  
-
-  
   addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
                    options = layersControlOptions(collapsed = TRUE))
 
-896
+#vol_map setMaxBounds(map, lng1, lat1, lng2, lat2)
+
 vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 ```
 
 ***
 
-The TRMG2 2020 base year highway assignment by time of day are presented here. Click the layers button to select HCMType for more focused viewing. 
+The TRMG2 2020 base year highway assignment by time of day are presented here. Click the layers button to select HCMType for more focused viewing. Click on a link to see its Road Name and total flow.
 
 
 
@@ -226,11 +229,11 @@ The TRMG2 2020 base year highway assignment by time of day are presented here. C
 bins = c(0,2500,5000,10000,15000,20000,30000)
 
 
-volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_PM, bins = bins)
+volume_pal <- colorBin(palette="YlGnBu", na.color="#808080", domain=g2$Tot_Flow_PM, bins = bins)
 
 
 vol_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(minZoom=8, maxZoom=15)) %>%
   setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=TLHighway,color=~volume_pal(Tot_Flow_PM),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
@@ -306,11 +309,11 @@ vol_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup(
 
 bins = c(0,2500,5000,7500,10000,15000,20000)
 
-volume_pal <- colorBin(palette="YlOrRd", na.color="#808080", domain=g2$Tot_Flow_AM, bins = bins)
+volume_pal <- colorBin(palette="YlGnBu", na.color="#808080", domain=g2$Tot_Flow_AM, bins = bins)
 
 
 vol_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(minZoom=8, maxZoom=15)) %>%
   setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>% 
 
   addPolylines(data=TLHighway,color=~volume_pal(Tot_Flow_AM),  
@@ -397,14 +400,14 @@ Capacity & Congestion {.storyboard data-icon="fa-clock"}
 congested_bins <- c(0, 5, 10, 50, 100, 250, 500)
 
 congested_pal <- colorBin(
-  palette = "YlOrRd", na.color = "#808080",
+  palette = "Blues", na.color = "#808080",
   bins=congested_bins,
   domain = g2$Total_Delay_Daily)
 
 
 
 cong_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(minZoom=8, maxZoom=15)) %>%
   setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=TLHighway,color=~congested_pal(Total_Delay_Daily),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
@@ -457,14 +460,14 @@ cong_map <- leaflet()%>%
                    options = layersControlOptions(collapsed = TRUE))
 
 
-cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 ```
 
 
 
 ***
 
-While some links in the model are uni-directional (one-way) others are bi-directional. Congested Time represents total delay in both directions for each link. 
+While some links in the model are uni-directional (one-way) others are bi-directional. Congested Time represents total delay in both directions for each link. Click on a link to see its Road Name and total delay in hours. 
 
 ### AM VOC
 
@@ -480,7 +483,7 @@ congested_pal <- colorBin(
 
 
 cong_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(minZoom=8, maxZoom=15)) %>%
   setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=TLHighway,color=~congested_pal(Max_VOC_AM),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
@@ -524,9 +527,9 @@ cong_map <- leaflet()%>%
 
 
       addLegend("bottomright",
-            pal=congested_pal,
+            colors =  c("#92C5DE", "#D1E5F0", "#F4A582", "#B2182B"),
             value=g2$Max_VOC_AM,
-         #   group="Freeways AM",
+            labels = c("No Congestion", "Light Congestion", "Moderate Congestion", "Severe Congestion"),
             title="AM VOC") %>%
   
   addLayersControl(overlayGroups = c("TLHighway", "MajorCollector", "Collector", "MLHighway", "Arterial","MajorArterial",'Freeway'),
@@ -559,7 +562,7 @@ congested_pal <- colorBin(
 
 
 cong_map <- leaflet()%>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(minZoom=8, maxZoom=15)) %>%
   setView(-78.86818828690794, 35.90135612029049, zoom = 8.5) %>%  
   addPolylines(data=TLHighway,color=~congested_pal(Max_VOC_PM),  
               popup = paste("Road Name: ", TLHighway$RoadName , "<br>",
@@ -601,11 +604,10 @@ cong_map <- leaflet()%>%
               group="Freeway") %>%
 
 
-
-      addLegend("bottomright",
-            pal=congested_pal,
+  addLegend("bottomright",
+            colors =  c("#92C5DE", "#D1E5F0", "#F4A582", "#B2182B"),
             value=g2$Max_VOC_PM,
-         #   group="Freeways AM",
+            labels = c("No Congestion", "Light Congestion", "Moderate Congestion", "Severe Congestion"),
             title="PM VOC") %>%
   
   
@@ -613,7 +615,7 @@ cong_map <- leaflet()%>%
                    options = layersControlOptions(collapsed = TRUE))
 
 
-cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector") %>%hideGroup("MajorArterial")
+cong_map  %>%hideGroup("TLHighway") %>%hideGroup("MajorCollector") %>% hideGroup("Collector")
 
 
 ```
@@ -653,18 +655,14 @@ temp <- melt(as.data.table(county_data))
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Demographic County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "") + scale_fill_manual(values=c("#edf8b1", "#2c7fb8"))
 
 ggplotly(p)
-
-
-
-
 
 ```
 
 
-### Education
+### Student
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(scales)
 
@@ -682,7 +680,7 @@ temp <- melt(as.data.table(county_data))
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Education County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Student County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "") + scale_fill_manual(values=c("#edf8b1", "#7fcdbb", "#2c7fb8"))
 
 ggplotly(p)
 
@@ -712,7 +710,7 @@ temp <- melt(as.data.table(county_data))
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("Employment County Totals")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "") + scale_fill_manual(values=c("#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"))
 
 ggplotly(p)
 
@@ -744,7 +742,7 @@ flow_flip <- g2 %>%
   mutate(Total_Flow = round(Total_Flow, 0))
 
 
-p <- ggplot(data=flow_flip, aes(x=County, y=Total_Flow)) +geom_bar(stat='identity',fill="orange") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=flow_flip, aes(x=County, y=Total_Flow)) +geom_bar(stat='identity',fill="#2c7fb8") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
 
 ggplotly(p) 
 
@@ -770,7 +768,7 @@ vht_flip <- g2 %>%
 
 
 
-p <- ggplot(data=vht_flip, aes(x=County, y=Total_VHT)) +geom_bar(stat='identity',fill="blue") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
+p <- ggplot(data=vht_flip, aes(x=County, y=Total_VHT)) +geom_bar(stat='identity',fill="#2c7fb8") + theme_classic() + xlab('')+ ylab('')+  theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)
 
 ggplotly(p) 
 
@@ -798,7 +796,7 @@ vmt_flip <- g2 %>%
 
 
 
-p <- ggplot(data=vmt_flip, aes(x=County, y=Total_VMT)) +geom_bar(stat='identity',fill="grey") + theme_classic() + xlab('')+ ylab('')+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=vmt_flip, aes(x=County, y=Total_VMT)) +geom_bar(stat='identity',fill="#2c7fb8") + theme_classic() + xlab('')+ ylab('')+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
 
 ggplotly(p) 
 
@@ -834,7 +832,7 @@ temp <- melt(as.data.table(temp))
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total Trips")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "") + scale_fill_manual(values=c("#edf8b1", "#7fcdbb", "#2c7fb8"))
 
 ggplotly(p) 
 
@@ -856,7 +854,7 @@ temp <- melt(as.data.table(temp))
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VMT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "") + scale_fill_manual(values=c("#edf8b1", "#7fcdbb", "#2c7fb8"))
 
 ggplotly(p) 
 
@@ -879,7 +877,7 @@ temp <- melt(as.data.table(temp))
 
 
 
-p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "")
+p <- ggplot(data=temp, aes(x=County, y=value, fill = variable)) +geom_bar(stat='identity', position='dodge') + theme_classic() + xlab('')+ ylab('')+ ggtitle("County Level Total VHT")+ theme(axis.text.x=element_text(angle = -45, hjust = 0))+ scale_y_continuous(labels=comma)+ labs(fill = "") + scale_fill_manual(values=c("#edf8b1", "#7fcdbb", "#2c7fb8"))
 
 ggplotly(p) 
 
@@ -889,6 +887,9 @@ ggplotly(p)
 
 Overview {.storyboard}
 =====================================  
+**Overview**
+This summary tool provides a glance at TRMG2v1.0 2020 model inputs and outputs. Use the menus at the top and summary buttons above each map to view various model elements. 
+
 
 **Acronyms**
 
